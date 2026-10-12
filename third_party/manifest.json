@@ -1,0 +1,24 @@
+{
+  "dependencies": [
+    {
+      "name": "tomlplusplus",
+      "repository": "https://github.com/marzer/tomlplusplus",
+      "revision": "30172438cee64926dc41fdd9c11fb3ba5b2ba9de",
+      "license": "MIT",
+      "files": {
+        "tomlplusplus/LICENSE": "529bc3900a9571e49db285b0df432397e70b881cc3bf48de6667ae74ff4b06d8",
+        "tomlplusplus/toml.hpp": "6b5172ad4dd6519aec67b919181fa7a38a2234131e5b2afa232dfe444819783e"
+      }
+    },
+    {
+      "name": "picosha2",
+      "repository": "https://github.com/okdshin/PicoSHA2",
+      "revision": "161cb3fc4170fa7a3eca9e582cebd27cc4d1fe29",
+      "license": "MIT",
+      "files": {
+        "picosha2/LICENSE": "6c30eb1f37554ec4199cb82a8c86d9e7a852da78a757832bebb03ac9ddc44ff1",
+        "picosha2/picosha2.h": "b13c180161ffac8d0adc81e033e493c409457c4d1258ab9781ac80579ba3bdd8"
+      }
+    }
+  ]
+}

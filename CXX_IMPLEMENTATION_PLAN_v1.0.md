@@ -2,7 +2,7 @@
 
 **需求依据**：[CXX_PRD_v1.0.md](CXX_PRD_v1.0.md)  
 **架构依据**：[CXX_ARCHITECTURE_v1.0.md](CXX_ARCHITECTURE_v1.0.md)  
-**状态**：建议计划，工作量、人选、版本下限及 OPEN 决策尚待确认。当前仓库没有实现，文中测试是待建设的验收项。
+**状态**：已开始 M0 实现；实际完成范围见 [M0 进展与验证](docs/M0_STATUS.md)。后续工作量、人选、版本下限及 OPEN 决策尚待确认；文中测试是总体验收计划，是否已通过以进展记录为准。
 
 ## 1. 交付原则与路线
 
@@ -37,7 +37,7 @@ flowchart LR
 |---|---|---|---|---|---|
 | R01 | §1、4.1、6.1 | C++ 脚本、固定入口、自有 DAG/Scheduler，无默认外部执行后端 | §2–3 | M0 | T01 原生闭环 |
 | R02 | §3、4.2 | TOML/脚本/Lock/状态职责分离；Header 拆分；结构化真实工具路径 | §3–5 | M0/M2 | T02 Bootstrap |
-| R03 | §3.1、4.3、4.4 | Core C++17，脚本声明标准、Target 覆写；Edition/Query/Lock 分离 | §3.2–3.3 | M0/M2/M5 | T03 标准与兼容 |
+| R03 | §3.1、4.3、4.4 | Core/Runtime C++23；公共 API 与用户语言最低 C++17，脚本声明标准、Target 覆写；Edition/Query/Lock 分离 | §3.2–3.3 | M0/M2/M5 | T03 标准与兼容 |
 | R04 | §3.3 | 内置/自定义 preset、项目优先、无继承、显式路径及组件覆盖 | §4.1 | M2 | T04 配置矩阵 |
 | R05 | §3.4 | 全字符串变量展开、缺失报错、CLI 变量覆盖、脱敏及身份追踪 | §4.2 | M2 | T05 展开与秘密 |
 | R06 | §3.5 | 自动安装/复用、全局默认、管理命令、LLVM 组件集、无 PATH/root 修改 | §4.3 | M2 | T06 安装生命周期 |
@@ -105,7 +105,7 @@ PRD §13 的 12 个 OPEN 均映射到架构 §12 的 D01–D12；额外 D13 记�
 
 | 原型 | 问题与实验 | 成功证据 | 失败后的处理 | 最晚门槛 |
 |---|---|---|---|---|
-| P01 Driver ABI | C++17 Runtime 与 C++17/20/更新模式脚本直接链接；异常/字符串/容器/分配释放；Windows CRT；Host 启动 | 三平台各一套可重复构建；ABI 不匹配被拒绝 | 收紧发行 ABI 矩阵或改用同工具链源码构建，禁止绕过校验 | M0 初证，M2 完整 |
+| P01 Driver ABI | C++23 Runtime 与 C++17/20/23/更新模式脚本直接链接；公共头文件 C++17 编译检查；异常/字符串/容器/分配释放；Windows CRT；Host 启动 | 三平台各一套可重复构建；ABI 不匹配被拒绝 | 收紧发行 ABI 矩阵或改用同工具链源码构建，禁止绕过校验 | M0 初证，M2 完整 |
 | P02 声明与 Lock | 单次脚本声明包句柄、元数据传递依赖、配置分域；两个进程竞争生成 Lock | 无重跑求解；旧项稳定；崩溃点前后 Lock 均有效 | 调整阶段 Interface/事务，M3 前冻结 | M0/M3 |
 | P03 动态输入 | 头文件遮蔽、缺失变存在、同 mtime 改内容、SDK/fork 改内容、路径差异 | 增量与干净构建一致；不存在错误命中 | 回退完整扫描和路径敏感键，性能优化后置 | M0/M4 |
 | P04 Modules | 至少一套工具链完成 Interface/Partition/Import、生成输入扫描、BMI 生命周期 | 可构建且变更传播正确；PCH/Unity 能力边界清楚 | 调整 Adapter/支持矩阵，不把目标 Modules 从 V1 移除 | M0 启动，M5 完整 |
@@ -124,7 +124,7 @@ PRD §13 的 12 个 OPEN 均映射到架构 §12 的 D01–D12；额外 D13 记�
 
 工作包：
 
-1. `M0.1` 建立 Core C++17 种子构建、单元测试、CI、fixture runner；固定开发依赖。
+1. `M0.1` 建立 Core/Runtime C++23 种子构建、单元测试、CI、fixture runner；保留公共 SDK 的 C++17 编译检查；固定开发依赖。
 2. `M0.2` 最小 `cxxrc.toml` 解析，SDK 头文件/Runtime 与 Driver 编译，`void build(Build&)` 调用。
 3. `M0.3` Executable/StaticLibrary、Source/Include/Define、目标引用、Compile/Archive/Link DAG。
 4. `M0.4` Linux 进程执行、顺序调度、标准错误与退出码；`new/build/run`。

@@ -92,7 +92,7 @@ version = "22"
 
 `edition` 从 `0` 开始。Edition 0 是早期语义，允许较快迭代；首个稳定 Edition 为 1。Edition 不等于 CXX 可执行程序版本，也不等于 C++ 标准版本。初期可以缺省为 0；稳定版项目应显式声明 Edition。
 
-`cpp.version` 默认作用于 `build.cpp` 和项目 Target；单个 Target 可以覆写。CXX Core 自身以 C++17 为最低实现基线，不能因此限制用户的 Build Script 必须使用 C++17。对于 C++26 等更新版本，必须验证所选编译器实际支持相应语言模式；不应声称所有编译器版本都完整支持某标准。
+`cpp.version` 默认作用于 `build.cpp` 和项目 Target；单个 Target 可以覆写。CXX 自身（Core 与 Runtime）采用 C++23 实现；用户 Build Script 和项目 Target 支持 C++17 及以上，公共 Build API 保持 C++17 可调用。实现标准与用户语言标准分别选择。源码构建 Runtime 的 Host 工具链需支持 CXX 实际使用的 C++23 能力，同时可按 C++17 模式编译用户脚本。对于 C++26 等更新版本，必须验证所选编译器实际支持相应语言模式；不应声称所有编译器版本都完整支持某标准。
 
 ### 3.2 Toolchain 与 CXX 版本解耦
 
@@ -415,7 +415,7 @@ V1 首要目标是**正确性、稳定性和可测量性**，不预先承诺“�
 
 ## 12. V0 → V1 里程碑建议（非强制实现顺序）
 
-**V0 — Architecture Spike**：Linux + Clang + C++17 Core；`build.cpp` → Driver → DAG → Compiler/Linker；Executable/StaticLibrary、头文件依赖、基本增量构建。
+**V0 — Architecture Spike**：Linux + Clang + C++23 Core/Runtime，用户脚本与项目最低 C++17；`build.cpp` → Driver → DAG → Compiler/Linker；Executable/StaticLibrary、头文件依赖、基本增量构建。
 
 **M1 — Portable Core**：跨平台 Process/Filesystem、Scheduler、Target Model、Graph、Profile、诊断和基础 CLI。
 
@@ -435,7 +435,7 @@ V1 首要目标是**正确性、稳定性和可测量性**，不预先承诺“�
 
 1. Project Model、Target Graph 与 Action Graph 的具体对象模型、所有权、稳定 Handle 及序列化边界。
 2. Build Driver 与 Runtime 的二进制链接/插件方式、Build API SDK 分发、异常 ABI、跨平台启动过程，以及 `build.cpp` 自身使用 C++ Modules 的具体支持范围。
-3. CXX Core C++17 最低标准所对应的最低 Clang/GCC/MSVC 编译器版本，以及实际支持的 C++26 语言功能检测策略。
+3. CXX Core/Runtime 所需 C++23 能力对应的最低 Clang/GCC/MSVC 与标准库版本，C++17 起的用户脚本兼容性，以及实际支持的 C++26 用户语言功能检测策略。
 4. `cxxrc.toml` 的严格 Schema：preset 版本选择、组件字段部分覆盖的 merge 规则、同名 preset 冲突、环境变量与 CLI `--set` 的精确解析优先级。
 5. Managed Toolchain 和自定义 fork 的真实性验证方法；系统、用户和项目 Toolchain 的信任边界；平台 SDK/stdlib 身份追踪。
 6. Package Registry API、包元数据结构、Conan/vcpkg Bridge 可实现边界、二进制 ABI 兼容判定及 Package 构建沙箱策略。
@@ -450,7 +450,7 @@ V1 首要目标是**正确性、稳定性和可测量性**，不预先承诺“�
 
 - CXX 是 CMake 的原生替代方案，不是 CMake wrapper；CXX 自行调度 DAG。
 - `build.cpp` 使用 C++，固定 `void build(cxx::Build&)` 入口；构建逻辑可经 Header 拆分。
-- CXX Core 最低 C++17；`build.cpp` 默认与项目语言标准一致，支持更新标准。
+- CXX Core/Runtime 采用 C++23；公共 Build API 保持 C++17 可调用。`build.cpp` 与项目支持 C++17 及以上，默认采用相同语言标准。
 - `cxxrc.toml` 仅负责 Bootstrap Toolchain 和 Edition；`build.cpp` 声明 Package、Target、Profile 和 SDK 使用关系。
 - Edition 从 0 开始，和 CXX 版本解耦；Query/Lock 独立版本化。
 - `preset` 为可参数化 Toolchain 模板，`version` 可选；允许自定义 preset 和组件覆盖；**不支持 preset 继承**。
@@ -473,7 +473,7 @@ V1 首要目标是**正确性、稳定性和可测量性**，不预先承诺“�
 1. 先提取本 PRD 的 MUST、FUTURE 和 OPEN 条目，制作需求追踪矩阵。
 2. 在不改变已确认产品边界的前提下，输出模块架构图、数据模型、关键流程、接口草案及 ADR。
 3. 对尚未冻结的 API 示例，不得把示例签名直接视为最终接口。
-4. 识别 C++17 Core、跨平台、Modules、Package、Remote Cache 之间的关键技术风险，并安排验证原型。
+4. 识别 C++23 Core/Runtime、C++17 起的用户脚本兼容性、跨平台、Modules、Package、Remote Cache 之间的关键技术风险，并安排验证原型。
 5. 将 V1 拆成可持续集成的里程碑，定义每个里程碑的验收测试和退出条件。
 6. 不要把 Remote Execution、IDE 完整插件、Task Runner、SDK 自动安装或自动修复重新放进 V1 必交范围。
 7. 如发现需求相互冲突，应显式提出 ADR/澄清点，不得自行隐藏或绕过冲突。

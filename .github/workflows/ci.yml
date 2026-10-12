@@ -1,0 +1,44 @@
+name: M0 checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Clang 18 on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: echo "CXX_COMPILER=/usr/bin/clang++-18" >> "$GITHUB_ENV"
+      - name: Install and select LLVM 20 on macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          # Upstream Clang 18+ supports C++23 explicit object parameters.
+          brew install llvm@20
+          llvm_prefix="$(brew --prefix llvm@20)"
+          echo "$llvm_prefix/bin" >> "$GITHUB_PATH"
+          echo "CXX_COMPILER=$llvm_prefix/bin/clang++" >> "$GITHUB_ENV"
+      - name: Print selected compiler version
+        shell: bash
+        run: |
+          test -x "$CXX_COMPILER"
+          "$CXX_COMPILER" --version
+      - name: Build and test with the selected Clang
+        run: python3 scripts/build.py --compiler "$CXX_COMPILER" --test
+      - name: Record incremental baseline
+        run: python3 scripts/benchmark.py --compiler "$CXX_COMPILER" --cxx build/cxx --output build/benchmark.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: baseline-${{ matrix.os }}
+          path: build/benchmark.json
