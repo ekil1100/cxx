@@ -66,6 +66,85 @@ class Integration(unittest.TestCase):
         self.put("build.cpp", '#include <cxx/cxx.hpp>\nvoid build(cxx::Build& b) { b.executable("app").source("src/main.cpp"); }\n')
         self.put("src/main.cpp", source)
 
+    def test_compile_settings_and_invalidation(self):
+        self.simple('''int main() {
+    int unused_variable;
+#ifdef __OPTIMIZE__
+    return 2;
+#else
+    return 0;
+#endif
+}
+''')
+        for level, warnings, expected in (("default_", False, 0), ("speed", True, 2), ("none", False, 0)):
+            with self.subTest(level=level):
+                self.put("build.cpp", '#include <cxx/cxx.hpp>\nvoid build(cxx::Build& b) { '
+                         'b.executable("app").source("src/main.cpp")'
+                         '.optimization(cxx::Optimization::' + level + ')'
+                         '.warnings(' + str(warnings).lower() + '); }\n')
+                result = self.invoke("build", "-v")
+                self.assertEqual(self.counts(result)[0], 1)
+                commands = [shlex.split(line[len("[command] "):]) for line in result.stderr.splitlines()
+                            if line.startswith("[command] ")]
+                compile_command = next(cmd for cmd in commands if "-c" in cmd
+                                       and cmd[cmd.index("-c") + 1].endswith("/src/main.cpp"))
+                for flag in ("-Wall", "-Wextra", "-Wpedantic"):
+                    self.assertEqual(flag in compile_command, warnings)
+                self.assertEqual("-O2" in compile_command, level == "speed")
+                self.assertEqual("-O0" in compile_command, level == "none")
+                self.assertEqual("unused variable" in result.stderr, warnings)
+                self.assertEqual(self.counts(self.invoke("run", expected=expected)), (0, 0, 0))
+
+    def test_system_include_visibility_and_dependencies(self):
+        script = '''#include <cxx/cxx.hpp>
+void build(cxx::Build& b) {
+    auto& leaf = b.static_library("leaf");
+    leaf.source("leaf.cpp").warnings().optimization(cxx::Optimization::speed)
+        .system_include("sys public", cxx::Visibility::public_)
+        .system_include("sys private")
+        .system_include("sys interface", cxx::Visibility::interface_);
+    auto& middle = b.static_library("middle");
+    middle.source("middle.cpp").link(leaf, cxx::Visibility::public_);
+    b.executable("app").source("main.cpp").link(middle);
+}
+'''
+        self.put("build.cpp", script)
+        header = 'inline int public_value() { return VALUE; }\nstatic void system_header_unused() {}\n'
+        self.put("sys public/public.hpp", header.replace("VALUE", "1"))
+        self.put("sys private/private.hpp", '#define PRIVATE_VALUE 0\n')
+        self.put("sys interface/interface.hpp", 'inline int interface_value() { return 2; }\n')
+        self.put("leaf.cpp", '''#include <public.hpp>
+#include <private.hpp>
+#if __has_include(<interface.hpp>) || !defined(__OPTIMIZE__)
+#error Incorrect local usage
+#endif
+int leaf() { return public_value() + PRIVATE_VALUE; }
+''')
+        consumer = '''#include <public.hpp>
+#include <interface.hpp>
+#if __has_include(<private.hpp>) || defined(__OPTIMIZE__)
+#error Incorrect propagated usage
+#endif
+'''
+        self.put("middle.cpp", consumer + 'int leaf(); int middle() { return leaf() + interface_value(); }\n')
+        self.put("main.cpp", consumer + 'int middle(); int main() { return middle() + public_value(); }\n')
+        result = self.invoke("build", "-v")
+        self.assertNotIn("warning:", result.stderr)
+        commands = [shlex.split(line[len("[command] "):]) for line in result.stderr.splitlines()
+                    if line.startswith("[command] ")]
+        for source in ("middle.cpp", "main.cpp"):
+            command = next(cmd for cmd in commands if "-c" in cmd and cmd[cmd.index("-c") + 1].endswith("/" + source))
+            self.assertNotIn("-Wall", command)
+            self.assertIn("-isystem", command)
+        self.assertEqual(self.counts(self.invoke("run", "app", expected=4)), (0, 0, 0))
+        self.put("sys public/public.hpp", header.replace("VALUE", "3"))
+        self.assertEqual(self.counts(self.invoke("run", "app", expected=8))[0], 3)
+        self.assertEqual(self.counts(self.invoke("build")), (0, 0, 0))
+        self.put("build.cpp", script.replace('.system_include("sys public",', '.include("sys public",'))
+        result = self.invoke("build")
+        self.assertEqual(self.counts(result)[0], 3)
+        self.assertIn("unused function", result.stderr)
+
     def test_new_and_run_arguments(self):
         created = self.base / "new project"
         self.invoke("new", str(created))

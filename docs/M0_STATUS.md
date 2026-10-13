@@ -2,7 +2,7 @@
 
 ## 结论
 
-已实现 M0 的核心构建闭环，并在 macOS arm64 / Apple Clang 21 上通过 C++ 单元测试、16 项集成测试、21 项定向回归和 7 项工具脚本测试。CXX Core/Runtime 已采用 C++23；公共 SDK、用户脚本和项目继续支持 C++17 起。当前可以创建项目、构建可执行程序和静态库、运行程序，并按内容进行本地增量构建。
+已实现 M0 的核心构建闭环和本地自举，并在 macOS arm64 / Apple Clang 21 上通过 C++ 单元测试、1 项自举测试、18 项集成测试、21 项定向回归和 9 项工具脚本测试。CXX Core/Runtime 已采用 C++23；公共 SDK、用户脚本和项目继续支持 C++17 起。当前可以创建项目、构建可执行程序和静态库、运行程序，并按内容进行本地增量构建。
 
 **M0 尚未正式退出**：Linux CI 实测、P02 包声明阶段原型、P04 Modules 原型仍待完成。M1–M6 保持计划状态；本文不把设计中的 V1 能力计为已经实现。
 
@@ -10,7 +10,7 @@
 
 | 工作包 | 状态 | 证据或剩余事项 |
 |---|---|---|
-| M0.1 种子构建、测试、依赖 | 核心完成 | `scripts/build.py`、单元/集成测试、依赖版本与校验清单；已添加 Linux/macOS CI，远端尚未运行 |
+| M0.1 种子构建、测试、依赖 | 核心完成 | `scripts/build.py`、`build.cpp`、自举及单元/集成测试、依赖校验清单；已配置 Linux/macOS CI，本次变更的远端结果待验证 |
 | M0.2 Bootstrap/Driver | 核心完成 | toml++ 严格最小 Schema；同工具链 C++23 Runtime 静态库；声明标准的单入口 Driver；结构化环境 |
 | M0.3 目标和 Action DAG | 完成当前子集 | Executable/StaticLibrary，源码/include/define/link，可见性、目标图与显式 Compile/Archive/Link Action 依赖 |
 | M0.4 进程与 CLI | macOS 已验证 | `new/build/run`、顺序执行、错误诊断、参数/退出码；POSIX 实现的 Linux 验证待 CI |
@@ -19,7 +19,7 @@
 
 ### 与建议计划的实现差异
 
-- 使用 Python 直接调用 Clang 作为种子构建，而非临时 CMake。本机没有 CMake；这个实现只负责构建 CXX 自身，用户项目始终经过 CXX 自有图与执行器。
+- Python 直接调用 Clang 只生成种子启动器；正式 CXX、support 库及单元测试由根目录 `build.cpp` 声明，经 CXX 自有图与执行器构建。Python 继续负责依赖校验、测试编排及输出快捷链接。
 - Runtime 先按项目缓存，尚未实现全局跨项目 Runtime 复用。
 - M0 仅使用系统已安装的 Clang/archiver；完整 preset、工具链下载、版本锁定与环境展开由 M2 实现。
 - 当前 Action 图按拓扑顺序执行；M1 再接并行与资源预算。
@@ -29,6 +29,9 @@
 
 | 路径 | 职责 |
 |---|---|
+| `build.cpp`、`cxxrc.toml` | CXX 自身的目标声明与 C++23 配置 |
+| `scripts/build.py` | 校验依赖、生成种子、调用 CXX 构建正式目标并编排测试 |
+| `tests/self_host.py` | 新启动器完整重建自身、空构建及可观察源码修改的验证 |
 | `src/main.cpp` | CLI、根目录发现、TOML、工具路径、Runtime/Driver Bootstrap |
 | `include/cxx/cxx.hpp` | 实验 Edition 0 的 Build/Target Interface |
 | `src/runtime.hpp`、`src/runtime.cpp` | 声明执行、图验证、使用要求传播、Action 规划与执行、程序启动 |
@@ -51,9 +54,9 @@ python3 scripts/benchmark.py --cxx build/cxx --output build/benchmark.json
 
 本机结果：
 
-- Core、Runtime 与单元测试按 C++23 编译，通过 `-Wall -Wextra -Wpedantic` 检查。
+- Core、Runtime 与单元测试按 C++23 编译。源码种子及正式自举目标均使用 `-O2 -Wall -Wextra -Wpedantic`，第三方头文件使用系统 include；自举测试检查实际目标编译命令。Bootstrap 生成的 Driver/Runtime 保留原有编译参数。
 - support/SDK 单元测试通过。
-- 16 项集成测试、21 项定向回归和 7 项工具脚本测试通过；参数化语言模式与错误用例包含在对应测试中。
+- 1 项自举测试、18 项集成测试、21 项定向回归和 9 项工具脚本测试通过，共 49 项 Python 测试；参数化语言模式与错误用例包含在对应测试中。
 - C++17/20/23 脚本分别链接 C++23 Runtime 并运行成功，目标可继续指定 C++17。
 - 公共 SDK 与 Driver 入口头文件独立按 C++17 编译通过；内部头文件在低于 C++23 模式下给出明确错误。
 - 目标标准覆写、脚本异常传播和各语言模式下空构建通过。
@@ -95,6 +98,18 @@ CI 显式选择 Ubuntu 24.04 上的 Clang 18，以及 macOS 14 上的 Homebrew L
 第四轮将同一保守策略覆盖到行标记中的 ASCII 控制字符及其转义表示。LF、CR、VT、FF、TAB 五类 include 目录路径均有错误命中反例和修复后回归；有诱饵时正确更新产物，无诱饵时正常构建，对象内容相同时链接仍可复用。最终统一验证为 C++ 单元测试及 44 项 Python 测试全部通过。
 
 上述修复不等同于完整崩溃持久化或沙箱保证。M1/M4 仍需补齐进程树生命周期、文件系统攻击边界、多输出事务及断电恢复。
+
+## 本地自举
+
+首次构建执行 `python3 scripts/build.py`：校验第三方依赖，生成 `build/cxx-seed`，由种子执行根目录 `build.cpp`，构建 `cxx_support`、`cxx` 和 `support_test`。正式产物位于 `.cxx/build/`；脚本为启动器和单元测试程序创建 `build/cxx`、`build/support_test` 相对符号链接。默认只构建；添加 `--test` 才执行完整测试。已有副本会被链接替换，后续原生产物更新时短入口自动指向新版本。
+
+日常统一执行 `./build/cxx build`，单元测试使用 `./build/support_test`。直接命令使用所选工具链；指定非默认编译器时设置 `CXX_BOOTSTRAP_COMPILER`。依赖清单校验目前由 Python 入口负责。
+
+自举测试复制源码到含中文和引号的临时路径，验证种子构建、新启动器在移除 SDK 环境覆盖后完整重建自身、空构建零动作，以及修改 `main.cpp` 后一次编译和链接产生新的可观察命令行为。测试通过短符号链接入口执行，并在修改前后均检查空构建；运行期间替换启动器产物、链接自动跟随新产物也已实测通过。
+
+Build API 新增目标局部的 `optimization(Optimization)` 与 `warnings(bool)`，以及按可见性传播的 `system_include(path, visibility)`。当前 Clang 后端将 `speed` 映射为 `-O2`、`none` 映射为 `-O0`、`default_` 保留编译器默认；启用警告加入 `-Wall -Wextra -Wpedantic`。系统 include 使用 `-isystem`，头文件仍参与原始内容哈希。回归验证配置失效、三种可见性、传递依赖、系统头诊断处理，以及优化和警告设置保持目标局部。公共头文件继续兼容 C++17。
+
+自举目标已配置上述选项，与种子的优化、警告及第三方系统 include 设置对齐；toml++ 的既有头文件警告得到系统头处理。完整 Profile、任意编译/链接选项、可搬移工具包、固定种子下载与发布流程仍待实现。
 
 ## 首次性能样本
 

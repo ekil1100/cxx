@@ -12,7 +12,8 @@ Available now:
 
 - `cxx new`, `cxx build`, and `cxx run`.
 - Executables and static libraries, including transitive static linking.
-- Source files, include directories, definitions, and private/public/interface usage requirements.
+- Source files, ordinary/system include directories, definitions, and private/public/interface usage requirements.
+- Per-target optimization and common compiler warnings.
 - A C++17-or-newer Build Driver directly linked with a C++23 Runtime built by the selected compiler.
 - A target graph and an explicit, sequential compile/archive/link action graph.
 - Content-based local incremental builds, with header discovery on each invocation.
@@ -33,15 +34,15 @@ The implementation uses C++23 explicit object parameters for recursive lambdas, 
 
 A compiler release number (such as Apple Clang 21) is separate from the language standard. CXX passes `-std=c++23` explicitly instead of relying on the compiler's default mode.
 
-The seed build does not need CMake, Ninja, root access, or a package-manager download. TOML parsing and SHA-256 use pinned, vendored libraries. `scripts/build.py` verifies their recorded checksums before compiling.
+The source bootstrap does not need CMake, Ninja, root access, or a package-manager download. TOML parsing and SHA-256 use pinned, vendored libraries. `scripts/build.py` verifies their recorded checksums, compiles only a seed launcher directly, then uses that launcher to build the formal targets declared in this repository's `build.cpp`.
 
 ```sh
 git clone https://github.com/ekil1100/cxx.git
 cd cxx
-python3 scripts/build.py --test
+python3 scripts/build.py
 ```
 
-This creates `build/cxx`. Keep the source tree: M0 compiles the Build API SDK and Runtime from it when preparing each project. Copying the launcher alone is not a standalone installation.
+This creates `build/cxx-seed`, then creates relative symbolic links at `build/cxx` and `build/support_test` to the self-built launcher and unit-test executable. These entrypoints track subsequent native rebuilds automatically. Add `--test` to run the full test suite after building. The native target artifacts remain in `.cxx/build/`. Keep the source tree: M0 compiles the Build API SDK and Runtime from it when preparing each project. Copying the launcher alone is not a standalone installation.
 
 ### First project
 
@@ -130,7 +131,19 @@ Use references for targets. The `Build` owns them and keeps their addresses stab
 - `public_`: applies to the current target and its users.
 - `interface_`: applies only to users.
 
-`include`, `define`, and `link` default to `private_`. Static libraries retain their required transitive link dependencies even when their compile requirements are private.
+`include`, `system_include`, `define`, and `link` default to `private_`. Static libraries retain their required transitive link dependencies even when their compile requirements are private.
+
+Target compilation settings can be declared explicitly:
+
+```cpp
+app.optimization(cxx::Optimization::speed)
+   .warnings()
+   .system_include("vendor/include", cxx::Visibility::private_);
+```
+
+For the current Clang backend, `Optimization::speed` selects `-O2`, `none` selects `-O0`, and `default_` adds no optimization flag. `.warnings()` enables `-Wall -Wextra -Wpedantic`; `.warnings(false)` returns to compiler-default diagnostics rather than suppressing all warnings. Both settings are local to a target, with the last setter taking effect. Defaults preserve existing compiler behavior.
+
+`system_include` emits `-isystem` and follows the same visibility and transitive propagation rules as `include`. Ordinary include directories are emitted before system directories; Clang determines search priority and diagnostic classification, including when a directory is declared both ways. System headers still participate in dependency hashing. All emitted settings enter the compile action key. Full Profiles and arbitrary compiler/linker options are future work.
 
 A target can override the language mode with `.cpp_standard("20")`. The script itself uses the configured language mode. `b.environment()` exposes the resolved compiler, archiver, C++ standard, and project root.
 
@@ -168,13 +181,35 @@ M0 limits:
 
 ## Development and verification
 
+See [Contributing to CXX](CONTRIBUTING.md) for environment setup, the self-hosting workflow, code conventions, and pull request checks.
+
+Optional [Task v3](https://taskfile.dev/docs/installation) shortcuts are available in `Taskfile.yml`: `task bootstrap` for the first build, `task build` for daily builds, `task unit` for C++ unit tests, `task test` for full verification, and `task bench` for the benchmark. Run `task` to list tasks. Task only wraps the existing commands; it does not define another build graph.
+
 ```sh
 python3 scripts/build.py --test
+python3 tests/self_host.py --cxx build/cxx
 python3 tests/integration.py --cxx build/cxx
 python3 tests/regressions.py --cxx build/cxx
 python3 tests/tooling_test.py
 python3 scripts/benchmark.py --cxx build/cxx --output build/benchmark.json
 ```
+
+### Self-hosting
+
+The root `cxxrc.toml` selects C++23. The root `build.cpp` declares `cxx_support`, `cxx`, and `support_test`; the public SDK remains C++17-compatible. Once a launcher exists, use it directly for development:
+
+```sh
+./build/cxx build
+./build/support_test
+```
+
+For a non-default compiler, set `CXX_BOOTSTRAP_COMPILER` when invoking CXX directly. Changes to compiler or SDK environment overrides invalidate affected cached actions.
+
+`python3 scripts/build.py --test` bootstraps the launcher, builds the formal targets with CXX, and tests the self-built executables. The self-hosting test uses an isolated checkout with a quoted Unicode path. It invokes the new launcher through the short symbolic-link entrypoint and verifies a full self-rebuild, no-op reuse, and an implementation change that adds observable behavior without refreshing the link. Python still handles test orchestration and dependency checksum validation.
+
+The seed and formal self-built targets both use C++23, `-O2`, `-Wall -Wextra -Wpedantic`, and system includes for third-party headers. The self-hosting test checks the emitted target compile flags. Bootstrap-generated Driver/Runtime compilation retains its existing settings; this change adds target configuration, not a global Profile. Relocatable, versioned seed downloads remain future work.
+
+### Test coverage
 
 The tests exercise real Clang builds, static-library visibility and ordering, C++17/20/23 scripts linked with a C++23 Runtime, a standalone C++17 public-header check, graph errors, dependency discovery, source-location behavior, file names with shell/Make-special characters, corrupted outputs, and failed publication. CI runs the same commands on Linux and macOS.
 

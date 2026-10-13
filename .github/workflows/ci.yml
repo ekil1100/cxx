@@ -34,7 +34,7 @@ jobs:
         run: |
           test -x "$CXX_COMPILER"
           "$CXX_COMPILER" --version
-      - name: Build and test with the selected Clang
+      - name: Bootstrap, self-build and test with the selected Clang
         run: python3 scripts/build.py --compiler "$CXX_COMPILER" --test
       - name: Record incremental baseline
         run: python3 scripts/benchmark.py --compiler "$CXX_COMPILER" --cxx build/cxx --output build/benchmark.json

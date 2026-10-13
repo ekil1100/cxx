@@ -17,6 +17,7 @@ struct Environment {
 
 enum class Visibility { private_, public_, interface_ };
 enum class TargetKind { executable, static_library };
+enum class Optimization { default_, none, speed };
 
 struct Usage {
     std::string value;
@@ -32,6 +33,9 @@ public:
     Target& operator=(Target&&) = delete;
     Target& source(std::string path);
     Target& include(std::string path, Visibility visibility = Visibility::private_);
+    Target& system_include(std::string path, Visibility visibility = Visibility::private_);
+    Target& optimization(Optimization level);
+    Target& warnings(bool enabled = true);
     Target& define(std::string value, Visibility visibility = Visibility::private_);
     Target& link(Target& dependency, Visibility visibility = Visibility::private_);
     Target& cpp_standard(std::string standard);
@@ -40,6 +44,9 @@ public:
     TargetKind kind() const { return kind_; }
     const std::vector<std::string>& sources() const { return sources_; }
     const std::vector<Usage>& includes() const { return includes_; }
+    const std::vector<Usage>& system_includes() const { return system_includes_; }
+    Optimization optimization() const { return optimization_; }
+    bool warnings_enabled() const { return warnings_; }
     const std::vector<Usage>& defines() const { return defines_; }
     const std::vector<std::pair<Target*, Visibility>>& dependencies() const { return dependencies_; }
     const std::string& standard() const { return standard_; }
@@ -52,6 +59,9 @@ private:
     TargetKind kind_;
     std::vector<std::string> sources_;
     std::vector<Usage> includes_;
+    std::vector<Usage> system_includes_;
+    Optimization optimization_ = Optimization::default_;
+    bool warnings_ = false;
     std::vector<Usage> defines_;
     std::vector<std::pair<Target*, Visibility>> dependencies_;
     std::string standard_;

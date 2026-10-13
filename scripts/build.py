@@ -1,14 +1,26 @@
 #!/usr/bin/env python3
-"""Build the M0 launcher and support tests without a package manager."""
+"""Bootstrap a seed launcher, then build CXX and its tests with CXX itself."""
 import argparse
 import hashlib
 import json
+import os
 import pathlib
 import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+def link_artifact(artifact, destination):
+    if artifact == destination:
+        return
+    # Replace the old entry only after the relative link is ready.
+    with tempfile.TemporaryDirectory(prefix=".cxx-link-", dir=destination.parent) as temporary:
+        link = pathlib.Path(temporary) / destination.name
+        link.symlink_to(os.path.relpath(artifact, destination.parent))
+        link.replace(destination)
 
 
 def main():
@@ -37,13 +49,18 @@ def main():
              "-isystem", str(ROOT / "third_party/tomlplusplus")]
     subprocess.run(flags + ["-DCXX_SDK_ROOT=" + json.dumps(str(ROOT), ensure_ascii=False),
                            str(ROOT / "src/main.cpp"), str(ROOT / "src/support.cpp"),
-                           "-o", str(output / "cxx")], check=True)
-    subprocess.run(flags + [str(ROOT / "tests/support_test.cpp"), str(ROOT / "src/support.cpp"),
-                           str(ROOT / "src/runtime.cpp"), "-o", str(output / "support_test")], check=True)
-    print("Built " + str(output / "cxx"), flush=True)
+                           "-o", str(output / "cxx-seed")], check=True)
+    environment = dict(os.environ, CXX_BOOTSTRAP_COMPILER=compiler, CXX_SDK_ROOT=str(ROOT))
+    subprocess.run([str(output / "cxx-seed"), "build", "cxx", "support_test"],
+                   cwd=ROOT, env=environment, check=True)
+    # Keep the existing output entrypoints; all formal targets come from build.cpp.
+    for name in ("cxx", "support_test"):
+        artifact = ROOT / ".cxx/build" / name / name
+        link_artifact(artifact, output / name)
+    print("Self-hosted " + str(output / "cxx"), flush=True)
     if args.test:
         subprocess.run([str(output / "support_test")], check=True)
-        for suite in ("integration.py", "regressions.py"):
+        for suite in ("self_host.py", "integration.py", "regressions.py"):
             subprocess.run([sys.executable, str(ROOT / "tests" / suite),
                             "--cxx", str(output / "cxx"), "--compiler", compiler], check=True)
         subprocess.run([sys.executable, str(ROOT / "tests/tooling_test.py")], check=True)

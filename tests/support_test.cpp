@@ -160,6 +160,18 @@ int main(int argc, char** argv) {
         auto& external = other.static_library("external");
         rejects([&] { app.link(external); }, "cross-Build dependency");
         rejects([&] { app.cpp_standard("invalid"); }, "invalid standard");
+        check(app.optimization() == cxx::Optimization::default_ && !app.warnings_enabled(),
+              "compile settings preserve compiler defaults");
+        check(&app.optimization(cxx::Optimization::speed).warnings().system_include("vendor") == &app,
+              "compile settings support chaining");
+        check(app.optimization() == cxx::Optimization::speed && app.warnings_enabled(), "compile settings stored");
+        check(app.system_includes().front().visibility == cxx::Visibility::private_, "system include defaults private");
+        app.optimization(cxx::Optimization::none).warnings(false);
+        check(app.optimization() == cxx::Optimization::none && !app.warnings_enabled(), "compile settings replaced");
+        rejects([&] { app.optimization(static_cast<cxx::Optimization>(99)); }, "invalid optimization");
+        rejects([&] { app.system_include(""); }, "empty system include");
+        rejects([&] { app.system_include(std::string{"x\0y", 3}); }, "NUL system include");
+        rejects([&] { app.system_include("vendor", static_cast<cxx::Visibility>(99)); }, "invalid system include visibility");
         rejects([&] { app.source(std::string{"x\0y", 3}); }, "NUL source path rejected");
         rejects([&] { app.define(std::string{"x\0y", 3}); }, "NUL definition rejected");
         fs::remove_all(root);

@@ -1,0 +1,39 @@
+version: '3'
+
+dir: '{{.ROOT_DIR}}'
+
+vars:
+  COMPILER: '{{default "clang++" .CXX_BOOTSTRAP_COMPILER}}'
+
+tasks:
+  default:
+    desc: List available development tasks
+    cmds:
+      - '{{.TASK_EXE | shellQuote}} --list'
+
+  bootstrap:
+    desc: Build the seed and self-hosted tools without running tests
+    cmds:
+      - python3 scripts/build.py --compiler {{.COMPILER | shellQuote}} {{.CLI_ARGS}}
+
+  build:
+    desc: Build with CXX (pass a target or -v after --)
+    cmds:
+      - CXX_BOOTSTRAP_COMPILER={{.COMPILER | shellQuote}} ./build/cxx build {{.CLI_ARGS}}
+
+  test:
+    desc: Bootstrap, self-build, and run the complete test suite
+    cmds:
+      - python3 scripts/build.py --compiler {{.COMPILER | shellQuote}} --test {{.CLI_ARGS}}
+
+  unit:
+    desc: Build and run the C++ unit tests
+    cmds:
+      - CXX_BOOTSTRAP_COMPILER={{.COMPILER | shellQuote}} ./build/cxx build support_test
+      - ./build/support_test
+
+  bench:
+    desc: Build CXX and record the incremental benchmark
+    cmds:
+      - CXX_BOOTSTRAP_COMPILER={{.COMPILER | shellQuote}} ./build/cxx build cxx
+      - python3 scripts/benchmark.py --compiler {{.COMPILER | shellQuote}} --cxx build/cxx --output build/benchmark.json {{.CLI_ARGS}}

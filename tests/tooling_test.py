@@ -70,7 +70,7 @@ class Tooling(unittest.TestCase):
 
                 with mock.patch.dict(os.environ, {"PATH": "link/.."}), mock.patch.object(sys, "argv", argv), mock.patch.object(build.subprocess, "run", side_effect=run) as calls, contextlib.redirect_stdout(io.StringIO()):
                     build.main()
-                for suite in ("integration.py", "regressions.py"):
+                for suite in ("self_host.py", "integration.py", "regressions.py"):
                     command = next(call.args[0] for call in calls.call_args_list
                                    if str(ROOT / "tests" / suite) in call.args[0])
                     compiler = command[command.index("--compiler") + 1]
@@ -81,7 +81,7 @@ class Tooling(unittest.TestCase):
 
     def test_suite_entrypoints_preserve_compiler_path_semantics(self):
         selected = self.compiler_path_fixture()
-        for suite in ("integration.py", "regressions.py"):
+        for suite in ("self_host.py", "integration.py", "regressions.py"):
             for choice in (selected, "link/../clang++", "clang++"):
                 with self.subTest(suite=suite, choice=choice):
                     argv = [suite, "--cxx", "cxx", "--compiler", choice]
@@ -135,12 +135,50 @@ class Tooling(unittest.TestCase):
             build.main()
         commands = [call.args[0] for call in run.call_args_list]
         self.assertEqual(commands[0][0], selected)
-        self.assertEqual(commands[1][0], selected)
-        for suite in ("integration.py", "regressions.py"):
+        self.assertEqual(commands[1], [str(self.root / "out/cxx-seed"), "build", "cxx", "support_test"])
+        self.assertEqual(run.call_args_list[1].kwargs["cwd"], ROOT)
+        self.assertEqual(run.call_args_list[1].kwargs["env"]["CXX_BOOTSTRAP_COMPILER"], selected)
+        self.assertEqual(run.call_args_list[1].kwargs["env"]["CXX_SDK_ROOT"], str(ROOT))
+        for name in ("cxx", "support_test"):
+            entry = self.root / "out" / name
+            self.assertTrue(entry.is_symlink())
+            self.assertEqual(os.readlink(entry), os.path.relpath(ROOT / ".cxx/build" / name / name, entry.parent))
+        self.assertNotIn(str(ROOT / "tests/support_test.cpp"), commands[0])
+        for suite in ("self_host.py", "integration.py", "regressions.py"):
             command = next(command for command in commands if str(ROOT / "tests" / suite) in command)
             self.assertEqual(command[command.index("--compiler") + 1], selected)
             self.assertEqual(command[command.index("--cxx") + 1], str(self.root / "out/cxx"))
         self.assertIn([sys.executable, str(ROOT / "tests/tooling_test.py")], commands)
+
+    def test_failed_self_build_does_not_link_or_test(self):
+        build = load("scripts/build.py")
+        argv = ["build.py", "--output", str(self.root / "out"), "--test"]
+        failure = subprocess.CalledProcessError(1, "cxx-seed")
+        with mock.patch.object(sys, "argv", argv), mock.patch.object(
+                build.subprocess, "run", side_effect=[subprocess.CompletedProcess([], 0), failure]) as run:
+            with self.assertRaises(subprocess.CalledProcessError):
+                build.main()
+        self.assertEqual(run.call_count, 2)
+        self.assertFalse((self.root / "out/cxx").is_symlink())
+        self.assertFalse((self.root / "out/support_test").is_symlink())
+
+    def test_relative_entry_tracks_replaced_artifact(self):
+        build = load("scripts/build.py")
+        artifact = self.root / "artifact"
+        artifact.write_text("first")
+        entry = self.root / "cxx"
+        entry.write_text("old copy")
+        build.link_artifact(artifact, entry)
+        self.assertEqual(os.readlink(entry), "artifact")
+        replacement = self.root / "replacement"
+        replacement.write_text("second")
+        replacement.replace(artifact)
+        self.assertEqual(entry.read_text(), "second")
+        build.link_artifact(artifact, entry)
+        self.assertEqual(entry.read_text(), "second")
+        build.link_artifact(artifact, artifact)
+        self.assertFalse(artifact.is_symlink())
+        self.assertEqual(artifact.read_text(), "second")
 
     def test_benchmark_execution_and_report_use_same_compiler(self):
         benchmark = load("scripts/benchmark.py")

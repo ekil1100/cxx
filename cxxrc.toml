@@ -1,0 +1,9 @@
+[cxx]
+edition = "0"
+
+[cpp]
+version = "23"
+
+[preset]
+name = "llvm"
+version = "system"

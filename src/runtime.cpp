@@ -65,6 +65,29 @@ Target& Target::include(std::string path, Visibility visibility) {
     return *this;
 }
 
+Target& Target::system_include(std::string path, Visibility visibility) {
+    require_text(path, "system include path");
+    require_visibility(visibility);
+    system_includes_.push_back({std::move(path), visibility});
+    return *this;
+}
+
+Target& Target::optimization(Optimization level) {
+    switch (level) {
+    case Optimization::default_:
+    case Optimization::none:
+    case Optimization::speed:
+        optimization_ = level;
+        return *this;
+    }
+    throw detail::Error("Invalid optimization level");
+}
+
+Target& Target::warnings(bool enabled) {
+    warnings_ = enabled;
+    return *this;
+}
+
 Target& Target::define(std::string value, Visibility visibility) {
     require_text(value, "definition");
     require_visibility(visibility);
@@ -252,6 +275,7 @@ void add_closure(const Target* target, std::set<const Target*>& closure) {
 
 struct CompileUsage {
     std::vector<std::string> includes;
+    std::vector<std::string> system_includes;
     std::vector<std::string> defines;
 };
 
@@ -261,6 +285,7 @@ void append_unique(std::vector<std::string>& values, const std::string& value) {
 
 void merge_usage(CompileUsage& into, const CompileUsage& from) {
     for (const auto& value : from.includes) append_unique(into.includes, value);
+    for (const auto& value : from.system_includes) append_unique(into.system_includes, value);
     for (const auto& value : from.defines) append_unique(into.defines, value);
 }
 
@@ -271,6 +296,9 @@ CompileUsage own_usage(const Target& target, bool exported) {
     };
     for (const auto& usage : target.includes()) {
         if (visible(usage.visibility)) append_unique(result.includes, usage.value);
+    }
+    for (const auto& usage : target.system_includes()) {
+        if (visible(usage.visibility)) append_unique(result.system_includes, usage.value);
     }
     for (const auto& usage : target.defines()) {
         if (visible(usage.visibility)) append_unique(result.defines, usage.value);
@@ -377,8 +405,20 @@ void build_targets(const Build& build, const std::vector<const Target*>& order,
         const auto output = artifact(root, *target);
         const auto& standard = target->standard().empty() ? environment.cpp_standard : target->standard();
         std::vector<std::string> flags{"-std=c++" + standard};
+        switch (target->optimization()) {
+        case Optimization::default_: break;
+        case Optimization::none: flags.push_back("-O0"); break;
+        case Optimization::speed: flags.push_back("-O2"); break;
+        }
+        if (target->warnings_enabled()) {
+            flags.insert(flags.end(), {"-Wall", "-Wextra", "-Wpedantic"});
+        }
         for (const auto& include : usages.at(target).includes) {
             flags.push_back("-I" + project_path(root, include).string());
+        }
+        for (const auto& include : usages.at(target).system_includes) {
+            flags.push_back("-isystem");
+            flags.push_back(project_path(root, include).string());
         }
         for (const auto& define : usages.at(target).defines) flags.push_back("-D" + define);
         std::vector<fs::path> inputs;
