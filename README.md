@@ -6,7 +6,7 @@ Build C++ with C++.
 
 CXX uses `build.cpp` to describe C++ targets and executes its own build graph. It aims to bring toolchains, dependencies, builds, and caches into one tool.
 
-**Current status: experimental M0 implementation.** The local build loop works with Clang on POSIX systems. macOS has been tested locally; the Linux CI workflow is included but has not yet been run for this change. The full V1 design is a roadmap, not a list of shipped features.
+**Current status: experimental M0 implementation.** The local build loop works with Clang on POSIX systems. macOS has passed local checks and the LLVM 20 CI job. The Linux Clang 18 CI job hit a compiler crash; its workflow now selects LLVM 20, with the rerun still pending. See [M0 status](docs/M0_STATUS.md) for the recorded run. The full V1 design is a roadmap, not a list of shipped features.
 
 Available now:
 

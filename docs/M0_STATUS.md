@@ -4,13 +4,13 @@
 
 已实现 M0 的核心构建闭环和本地自举，并在 macOS arm64 / Apple Clang 21 上通过 C++ 单元测试、1 项自举测试、18 项集成测试、21 项定向回归和 9 项工具脚本测试。CXX Core/Runtime 已采用 C++23；公共 SDK、用户脚本和项目继续支持 C++17 起。当前可以创建项目、构建可执行程序和静态库、运行程序，并按内容进行本地增量构建。
 
-**M0 尚未正式退出**：Linux CI 实测、P02 包声明阶段原型、P04 Modules 原型仍待完成。M1–M6 保持计划状态；本文不把设计中的 V1 能力计为已经实现。
+**M0 尚未正式退出**：Linux CI 通过验证、P02 包声明阶段原型、P04 Modules 原型仍待完成。M1–M6 保持计划状态；本文不把设计中的 V1 能力计为已经实现。
 
 ## 工作包进展
 
 | 工作包 | 状态 | 证据或剩余事项 |
 |---|---|---|
-| M0.1 种子构建、测试、依赖 | 核心完成 | `scripts/build.py`、`build.cpp`、自举及单元/集成测试、依赖校验清单；已配置 Linux/macOS CI，本次变更的远端结果待验证 |
+| M0.1 种子构建、测试、依赖 | 核心完成 | `scripts/build.py`、`build.cpp`、自举及单元/集成测试、依赖校验清单；macOS LLVM 20 CI 已通过；Linux Clang 18 编译器崩溃，切换 LLVM 20 后的结果待验证 |
 | M0.2 Bootstrap/Driver | 核心完成 | toml++ 严格最小 Schema；同工具链 C++23 Runtime 静态库；声明标准的单入口 Driver；结构化环境 |
 | M0.3 目标和 Action DAG | 完成当前子集 | Executable/StaticLibrary，源码/include/define/link，可见性、目标图与显式 Compile/Archive/Link Action 依赖 |
 | M0.4 进程与 CLI | macOS 已验证 | `new/build/run`、顺序执行、错误诊断、参数/退出码；POSIX 实现的 Linux 验证待 CI |
@@ -93,11 +93,24 @@ python3 scripts/benchmark.py --cxx build/cxx --output build/benchmark.json
 
 第三轮增加对实际预处理行标记的检查，覆盖直接、宏和传递 include 中的反斜杠路径，并验证普通、引号和中文路径保留增量复用。进程启动改为父进程单侧建立进程组，所有子进程经同步管道等待初始化完成，避免本机已复现的双侧 `setpgid` 偶发 `EPERM`。单元测试增加 1,000 次并发启动；另有 20,000 次定向启动及 40 次父进程失败注入通过。此前一次缺少阶段日志的 Clang 126 事件是否同因，仍无法判断。
 
-CI 显式选择 Ubuntu 24.04 上的 Clang 18，以及 macOS 14 上的 Homebrew LLVM 20；构建、测试和基准使用同一编译器路径。工作流静态检查通过，实际 runner 结果仍待验证。
+CI 最初显式选择 Ubuntu 24.04 上的 Clang 18，以及 macOS 14 上的 Homebrew LLVM 20；构建、测试和基准使用同一编译器路径。远端运行已核对：macOS 通过，Linux 暴露编译器崩溃。当前工作流将 Linux 改为 LLVM 官方 APT 仓库的 Clang/LLVM 20；修复后的 Linux runner 结果待验证。
 
 第四轮将同一保守策略覆盖到行标记中的 ASCII 控制字符及其转义表示。LF、CR、VT、FF、TAB 五类 include 目录路径均有错误命中反例和修复后回归；有诱饵时正确更新产物，无诱饵时正常构建，对象内容相同时链接仍可复用。最终统一验证为 C++ 单元测试及 44 项 Python 测试全部通过。
 
 上述修复不等同于完整崩溃持久化或沙箱保证。M1/M4 仍需补齐进程树生命周期、文件系统攻击边界、多输出事务及断电恢复。
+
+## 远端 CI 证据
+
+已核对提交 `2223b0c` 的 [M0 checks 运行 38373985372](https://github.com/ekil1100/cxx/actions/runs/38373985372)：
+
+| 平台 | 工具链 | 结果 |
+|---|---|---|
+| macOS 14 arm64 | Homebrew Clang 20.1.8 | 自举、C++ 单元测试及 49 项 Python 测试通过；基准执行和报告上传通过 |
+| Ubuntu 24.04 x86_64 | Ubuntu Clang 18.1.3 | 编译 `src/runtime.cpp` 时前端以 139 退出；测试和基准尚未开始 |
+
+Linux 日志将崩溃定位到 `validate_graph` 的显式对象参数递归 lambda 的 LLVM IR 生成阶段。接受 C++23 语法并不足以证明代码生成可用。本次保持 C++23 实现，改为从 LLVM 官方 APT 仓库安装 Clang/LLVM 20，并让 PATH 中的归档工具来自同一主版本。软件源使用限定于该源的签名密钥。
+
+该工作流修改仍待新一轮 Linux CI 结果验证；macOS 既有通过记录不替代 Linux 验证。
 
 ## 本地自举
 
@@ -126,7 +139,7 @@ Build API 新增目标局部的 `optimization(Optimization)` 与 `warnings(bool)
 
 ## 下一步
 
-1. 在 Linux CI 执行当前测试，记录真实工具链版本和结果。
+1. 核对 Linux CI 的 LLVM 20 修复运行，复验构建、测试和基准，并记录结果。
 2. 完成 P02 声明句柄/包解析阶段原型，确认阶段限制后再冻结包 Interface。
 3. 启动 P04 Modules 扫描原型，提前识别编译器和 BMI 约束。
 4. M0 验收后进入 M1：平台进程、Shared/ObjectLibrary、生成文件、测试/安装与资源感知调度。

@@ -11,7 +11,7 @@ Use Linux or macOS with:
 - `llvm-ar` or `ar`.
 - Python 3.8 or later for source bootstrap and test orchestration.
 
-The [CI workflow](.github/workflows/ci.yml) selects Clang 18 on Ubuntu 24.04 and Homebrew LLVM 20 on macOS 14. Compiler and standard-library capabilities both matter; accepting `-std=c++23` alone is insufficient. See M0 status for verified environments.
+The [CI workflow](.github/workflows/ci.yml) selects LLVM 20 from the official LLVM APT repository on Ubuntu 24.04 and Homebrew LLVM 20 on macOS 14. Ubuntu Clang 18.1.3 crashed while generating code for the Runtime's explicit-object-parameter lambdas in CI; use the configured LLVM 20 toolchain. Compiler and standard-library capabilities both matter; accepting `-std=c++23` alone is insufficient. See M0 status for verified environments.
 
 CMake and Ninja are not required. Third-party sources are vendored; the bootstrap script verifies their checksums before compiling.
 
