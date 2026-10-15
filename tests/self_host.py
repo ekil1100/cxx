@@ -28,17 +28,19 @@ class SelfHost(unittest.TestCase):
             env = dict(os.environ, CXX_BOOTSTRAP_COMPILER=COMPILER, CXX_SDK_ROOT=str(root))
 
             def invoke(executable, *arguments):
+                if arguments[0] == "build" and "-v" not in arguments:
+                    arguments = (*arguments, "-v")
                 result = subprocess.run([str(executable), *arguments], cwd=root, env=env,
                                         text=True, capture_output=True, timeout=180)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 return result
 
-            def counts(result):
+            def check_counts(result, expected):
                 match = re.search(r"compiled=(\d+) archived=(\d+) linked=(\d+)", result.stderr)
                 self.assertIsNotNone(match, result.stderr)
-                return tuple(map(int, match.groups()))
+                self.assertEqual(tuple(map(int, match.groups())), expected, result.stdout + result.stderr)
 
-            self.assertEqual(counts(invoke(CXX, "build")), (4, 1, 2))
+            check_counts(invoke(CXX, "build"), (4, 1, 2))
             artifact = root / ".cxx/build/cxx/cxx"
             (root / "build").mkdir()
             current = root / "build/cxx"
@@ -51,7 +53,7 @@ class SelfHost(unittest.TestCase):
             # a real self-rebuild rather than merely a cache lookup.
             env.pop("CXX_SDK_ROOT")
             rebuilt = invoke(current, "build", "-v")
-            self.assertEqual(counts(rebuilt), (4, 1, 2))
+            check_counts(rebuilt, (4, 1, 2))
             commands = [shlex.split(line[len("[command] "):]) for line in rebuilt.stderr.splitlines()
                         if line.startswith("[command] ")]
             target_compiles = [cmd for cmd in commands if "-c" in cmd
@@ -60,7 +62,7 @@ class SelfHost(unittest.TestCase):
             for command in target_compiles:
                 for flag in ("-std=c++23", "-O2", "-Wall", "-Wextra", "-Wpedantic", "-isystem"):
                     self.assertIn(flag, command)
-            self.assertEqual(counts(invoke(current, "build")), (0, 0, 0))
+            check_counts(invoke(current, "build"), (0, 0, 0))
 
             source = root / "src/main.cpp"
             text = source.read_text()
@@ -72,10 +74,10 @@ class SelfHost(unittest.TestCase):
         return 0;
     }
 '''))
-            self.assertEqual(counts(invoke(current, "build")), (1, 0, 1))
+            check_counts(invoke(current, "build"), (1, 0, 1))
             self.assertTrue(current.is_symlink())
             self.assertEqual(invoke(current, "--self-host-probe").stdout, "self-host-probe\n")
-            self.assertEqual(counts(invoke(current, "build")), (0, 0, 0))
+            check_counts(invoke(current, "build"), (0, 0, 0))
 
 
 if __name__ == "__main__":

@@ -189,7 +189,8 @@ bool has_lossy_line_marker(const std::string& text) {
     return false;
 }
 
-// Symbol aliases such as __asm("_" "fopen") do not read assembler files.
+// Symbol aliases and a single .globl declaration do not read assembler files.
+// libstdc++ <iostream> uses .globl for its initialization symbol.
 // Other assembly can use .incbin/.include or assembler macros, which Clang's
 // C++ dependency file does not cover. Recompile those actions on every build.
 bool has_untracked_assembly(const std::string& text) {
@@ -227,14 +228,24 @@ bool has_untracked_assembly(const std::string& text) {
             if (next == text.size() || text[next++] != '(') return true;
             whitespace(next);
             bool saw_literal = false;
+            std::string assembly;
             while (next < text.size() && text[next] == '"') {
                 saw_literal = true;
-                ++next;
-                while (next < text.size() && (word(text[next]) || text[next] == '$')) ++next;
+                const auto literal = ++next;
+                while (next < text.size() && (word(text[next]) || text[next] == '$' ||
+                                             text[next] == '.' || text[next] == ' ')) ++next;
+                assembly.append(text, literal, next - literal);
+                // Escapes, newlines and separators remain conservatively uncached.
                 if (next == text.size() || text[next++] != '"') return true;
                 whitespace(next);
             }
             if (!saw_literal || next == text.size() || text[next] != ')') return true;
+            std::string_view symbol = assembly;
+            if (symbol.starts_with(".globl ")) {
+                symbol.remove_prefix(7);
+                if (symbol.empty()) return true;
+            }
+            if (!std::ranges::all_of(symbol, [&](char c) { return word(c) || c == '$'; })) return true;
             i = next + 1;
         } else ++i;
     }
@@ -515,7 +526,7 @@ bool compile_cpp(const fs::path& compiler, const fs::path& source,
         if (lossy_path.empty() && has_lossy_line_marker(read_file(scan.path))) {
             lossy_path = "line marker filename";
         }
-        std::vector<std::string> fields{"cxx-m0-compile-v5", compiler.string(), source.string(),
+        std::vector<std::string> fields{"cxx-m0-compile-v6", compiler.string(), source.string(),
                                         output.string(), cwd.string(), tool_identity,
                                         environment_fingerprint(), hash_file(scan.path),
                                         hash_file(cwd / source), lossy_path};

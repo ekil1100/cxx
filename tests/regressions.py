@@ -163,6 +163,41 @@ class Regressions(unittest.TestCase):
         self.assertEqual(without_decoy.stdout, first.stdout)
         self.assertIn("compiled=1", without_decoy.stderr)
 
+    def test_global_symbol_declaration_preserves_noop_build(self):
+        self.declare()
+        for directive in ('".globl cxx_probe_symbol"', '".globl " "cxx_probe_symbol"',
+                          '".glo" "bl cxx_probe_symbol"'):
+            with self.subTest(directive=directive):
+                self.put("main.cpp", 'asm(' + directive + ');\n'
+                         'extern "C" int probe() asm("cxx_probe_symbol");\n'
+                         'int probe() { return 0; }\nint main() { return probe(); }\n')
+                self.invoke("run")
+                unchanged = self.invoke("build", "-v")
+                self.assertIn("compiled=0 archived=0 linked=0", unchanged.stderr)
+                self.assertNotIn("[uncached]", unchanged.stderr)
+
+    def test_global_symbol_prefix_keeps_assembler_inputs_uncached(self):
+        import json
+        self.declare()
+        symbol = "_payload" if sys.platform == "darwin" else "payload"
+        section = ".section __TEXT,__const" if sys.platform == "darwin" else ".section .rodata"
+        for directive in ('.include "data.s"', '.incbin "data.bin"'):
+            with self.subTest(directive=directive):
+                tail = symbol + "\n" + section + "\n" + symbol + ":\n" + directive + "\n.text\n"
+                self.put("main.cpp", 'asm(".globl " ' + json.dumps(tail) + ');\n'
+                         'extern "C" const unsigned char payload[];\n'
+                         'int main() { return payload[0]; }\n')
+                self.put("data.s", ".byte 7\n")
+                (self.project / "data.bin").write_bytes(bytes([7]))
+                self.invoke("run", expected=7)
+                unchanged = self.invoke("build", "-v")
+                self.assertIn("compiled=1 archived=0 linked=0", unchanged.stderr)
+                self.assertIn("[uncached] Assembly input closure is not tracked", unchanged.stderr)
+                self.put("data.s", ".byte 9\n")
+                (self.project / "data.bin").write_bytes(bytes([9]))
+                changed = self.invoke("run", expected=9)
+                self.assertIn("compiled=1 archived=0 linked=1", changed.stderr)
+
     def test_backslash_source_bypasses_lossy_depfile(self):
         self.declare(r'b.executable("app").source("unit\\name.cpp");')
         source = self.put(r"unit\name.cpp", '#include <cstdio>\n#define LONG_MACRO 123456789\n'
