@@ -102,8 +102,18 @@ The unified command already runs all suites below; there is no need to repeat th
 | Integration | `python3 tests/integration.py --cxx build/cxx` | CLI, graph semantics, language modes, incremental correctness, and failures |
 | Regressions | `python3 tests/regressions.py --cxx build/cxx` | Special paths, output collisions, terminal handoff, and signals |
 | Tooling | `python3 tests/tooling_test.py` | Compiler propagation, output links, and benchmark metadata |
+| P02 prototype | `python3 tests/prototypes/p02/run.py --compiler /path/to/clang++` | Single declaration, deferred binding, and Lock publication |
+| P04 runner | `python3 tests/prototypes/p04/test_runner.py` | Scan contract and missing-tool diagnostics |
 
 Pass `--compiler /path/to/clang++` to the self-hosting, integration, and regression suites when testing a non-default compiler. Build current artifacts before running a suite directly. Add a regression test that exercises the actual failure path when fixing a bug.
+
+The full `--test` suite includes P02 and the P04 runner checks. The real Modules prototype needs a matching upstream Clang and `clang-scan-deps`, and runs separately (also configured in CI):
+
+```sh
+python3 tests/prototypes/p04/run.py --compiler /path/to/clang++ --scanner /path/to/clang-scan-deps
+```
+
+These isolated experiments do not add production package or Modules support. See the [P02 notes](tests/prototypes/p02/README.md) and [P04 notes](tests/prototypes/p04/README.md) for evidence and limitations.
 
 For build-performance changes, record the benchmark:
 

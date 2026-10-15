@@ -1,0 +1,47 @@
+# Immutable, local metadata only; these are synthetic packages, not downloaded artifacts.
+[[packages]]
+name = "widget"
+version = "1.0.0"
+major = 1
+exports = ["widget::widget"]
+dependencies = [
+  { name = "core", major = 1 },
+  { name = "debug-helper", major = 1, profile = "debug" },
+  { name = "host-helper", major = 1, role = "host" },
+  { name = "platform-helper", major = 1, platform = "fixture-b" },
+]
+
+[[packages]]
+name = "core"
+version = "1.0.0"
+major = 1
+exports = ["core::core"]
+dependencies = []
+
+[[packages]]
+name = "extra"
+version = "1.0.0"
+major = 1
+exports = ["extra::extra"]
+dependencies = [{ name = "core", major = 1 }]
+
+[[packages]]
+name = "debug-helper"
+version = "1.0.0"
+major = 1
+exports = ["debug-helper::debug-helper"]
+dependencies = []
+
+[[packages]]
+name = "host-helper"
+version = "1.0.0"
+major = 1
+exports = ["host-helper::host-helper"]
+dependencies = []
+
+[[packages]]
+name = "platform-helper"
+version = "1.0.0"
+major = 1
+exports = ["platform-helper::platform-helper"]
+dependencies = []

@@ -1,0 +1,624 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "python": "3.9.6 (default, Aug 25 2026, 21:26:21) \n[Clang 21.0.0 (clang-2100.3.34.2)]",
+  "commands": [
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "--version"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "Homebrew clang version 21.1.8\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@21/21.1.8/bin\nConfiguration file: /opt/homebrew/etc/clang/arm64-apple-darwin.cfg\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang-scan-deps",
+        "--version"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "/opt/homebrew/opt/llvm@21/bin/clang-scan-deps\nHomebrew LLVM version 21.1.8\n  Optimized build.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "sw_vers"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "xcrun",
+        "--show-sdk-path"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang-scan-deps",
+        "-format=p1689",
+        "-compilation-database=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/compile_commands.json"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 1,
+      "stdout": "{\n  \"revision\": 0,\n  \"rules\": [\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.cppm\"\n        }\n      ],\n      \"requires\": [\n        {\n          \"logical-name\": \"p04:value\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/main.o\",\n      \"requires\": [\n        {\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.cppm\"\n        }\n      ]\n    }\n  ],\n  \"version\": 1\n}\n",
+      "stderr": "Error while scanning dependencies for /Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.cppm:\n/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.cppm:2:10: fatal error: 'generated.hpp' file not found\n"
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang-scan-deps",
+        "-format=p1689",
+        "-compilation-database=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/compile_commands.json"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "{\n  \"revision\": 0,\n  \"rules\": [\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.cppm\"\n        }\n      ],\n      \"requires\": [\n        {\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/main.o\",\n      \"requires\": [\n        {\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.cppm\"\n        }\n      ]\n    }\n  ],\n  \"version\": 1\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "value.cppm",
+        "-MD",
+        "-MF",
+        "value.d",
+        "-o",
+        "value.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "api.cppm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.pcm",
+        "-o",
+        "api.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "value.pcm",
+        "-o",
+        "value.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "api.pcm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.pcm",
+        "-o",
+        "api.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "main.cpp",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.pcm",
+        "-fmodule-file=p04=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.pcm",
+        "-o",
+        "main.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "value.o",
+        "api.o",
+        "main.o",
+        "-o",
+        "app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "42\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang-scan-deps",
+        "-format=p1689",
+        "-compilation-database=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/compile_commands.json"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "{\n  \"revision\": 0,\n  \"rules\": [\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.cppm\"\n        }\n      ],\n      \"requires\": [\n        {\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/main.o\",\n      \"requires\": [\n        {\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.cppm\"\n        }\n      ]\n    }\n  ],\n  \"version\": 1\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "value.cppm",
+        "-MD",
+        "-MF",
+        "value.d",
+        "-o",
+        "value.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "api.cppm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.pcm",
+        "-o",
+        "api.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "value.pcm",
+        "-o",
+        "value.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "api.pcm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.pcm",
+        "-o",
+        "api.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "main.cpp",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.pcm",
+        "-fmodule-file=p04=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.pcm",
+        "-o",
+        "main.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "value.o",
+        "api.o",
+        "main.o",
+        "-o",
+        "app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "43\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang-scan-deps",
+        "-format=p1689",
+        "-compilation-database=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/compile_commands.json"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "{\n  \"revision\": 0,\n  \"rules\": [\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.cppm\"\n        }\n      ],\n      \"requires\": [\n        {\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/main.o\",\n      \"requires\": [\n        {\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.cppm\"\n        }\n      ]\n    }\n  ],\n  \"version\": 1\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "value.cppm",
+        "-MD",
+        "-MF",
+        "value.d",
+        "-o",
+        "value.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "api.cppm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.pcm",
+        "-o",
+        "api.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "value.pcm",
+        "-o",
+        "value.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "api.pcm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.pcm",
+        "-o",
+        "api.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "main.cpp",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.pcm",
+        "-fmodule-file=p04=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.pcm",
+        "-o",
+        "main.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "value.o",
+        "api.o",
+        "main.o",
+        "-o",
+        "app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "53\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang-scan-deps",
+        "-format=p1689",
+        "-compilation-database=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/compile_commands.json"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "{\n  \"revision\": 0,\n  \"rules\": [\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.cppm\"\n        }\n      ],\n      \"requires\": [\n        {\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/main.o\",\n      \"requires\": [\n        {\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.cppm\"\n        }\n      ]\n    }\n  ],\n  \"version\": 1\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "value.cppm",
+        "-MD",
+        "-MF",
+        "value.d",
+        "-o",
+        "value.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "api.cppm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.pcm",
+        "-o",
+        "api.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "value.pcm",
+        "-o",
+        "value.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "api.pcm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.pcm",
+        "-o",
+        "api.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "main.cpp",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/value.pcm",
+        "-fmodule-file=p04=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/api.pcm",
+        "-o",
+        "main.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@21/bin/clang++",
+        "value.o",
+        "api.o",
+        "main.o",
+        "-o",
+        "app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h/app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 g6cwxm1h",
+      "returncode": 0,
+      "stdout": "53\n",
+      "stderr": ""
+    }
+  ],
+  "stages": [
+    {
+      "name": "initial",
+      "output": "42\n",
+      "bmi_sha256": {
+        "value.pcm": "26c004a1820f01695f3cff1e7d7f545c696f872c89b8562fedecdccb76a448f3",
+        "api.pcm": "3474a57835f08c918cf5202f261dcf245259732dba0b2fafa10a8111c5ce914a"
+      }
+    },
+    {
+      "name": "partition-edit",
+      "output": "43\n",
+      "bmi_sha256": {
+        "value.pcm": "2f8c06e8b18ca75fe85623e8c58acd37ca3cf921e7baf3b24d538cb8badf49ad",
+        "api.pcm": "247c347e687d67440f1cfcefa6f463a8ce91d474c4a719e793cac0a1520b9d19"
+      }
+    },
+    {
+      "name": "generated-edit",
+      "output": "53\n",
+      "bmi_sha256": {
+        "value.pcm": "36a58ea9a11ed22b85b8d3a428d3c28c5a670180e108a07d36e84208e4e01a56",
+        "api.pcm": "e4be6b11be8dbbaf6176f395e206d0a1d03ae730c4da06ffc68721a77b533c25"
+      }
+    },
+    {
+      "name": "clean-rebuild",
+      "output": "53\n",
+      "bmi_sha256": {
+        "value.pcm": "36a58ea9a11ed22b85b8d3a428d3c28c5a670180e108a07d36e84208e4e01a56",
+        "api.pcm": "e4be6b11be8dbbaf6176f395e206d0a1d03ae730c4da06ffc68721a77b533c25"
+      }
+    }
+  ],
+  "status": "PASS",
+  "compiler": "/opt/homebrew/opt/llvm@21/bin/clang++",
+  "scanner": "/opt/homebrew/opt/llvm@21/bin/clang-scan-deps",
+  "tool_versions": [
+    "Homebrew clang version 21.1.8\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@21/21.1.8/bin\nConfiguration file: /opt/homebrew/etc/clang/arm64-apple-darwin.cfg\n",
+    "/opt/homebrew/opt/llvm@21/bin/clang-scan-deps\nHomebrew LLVM version 21.1.8\n  Optimized build.\n"
+  ],
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n",
+  "sdk": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+}

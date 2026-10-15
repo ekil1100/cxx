@@ -1,0 +1,624 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "python": "3.9.6 (default, Aug 25 2026, 21:26:21) \n[Clang 21.0.0 (clang-2100.3.34.2)]",
+  "commands": [
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "--version"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "Homebrew clang version 20.1.8\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@20/20.1.8/bin\nConfiguration file: /opt/homebrew/etc/clang/arm64-apple-darwin.cfg\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang-scan-deps",
+        "--version"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "/opt/homebrew/opt/llvm@20/bin/clang-scan-deps\nHomebrew LLVM version 20.1.8\n  Optimized build.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "sw_vers"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "xcrun",
+        "--show-sdk-path"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang-scan-deps",
+        "-format=p1689",
+        "-compilation-database=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/compile_commands.json"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 1,
+      "stdout": "{\n  \"revision\": 0,\n  \"rules\": [\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.cppm\"\n        }\n      ],\n      \"requires\": [\n        {\n          \"logical-name\": \"p04:value\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/main.o\",\n      \"requires\": [\n        {\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.cppm\"\n        }\n      ]\n    }\n  ],\n  \"version\": 1\n}\n",
+      "stderr": "Error while scanning dependencies for /Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.cppm:\n/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.cppm:2:10: fatal error: 'generated.hpp' file not found\n"
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang-scan-deps",
+        "-format=p1689",
+        "-compilation-database=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/compile_commands.json"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "{\n  \"revision\": 0,\n  \"rules\": [\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.cppm\"\n        }\n      ],\n      \"requires\": [\n        {\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/main.o\",\n      \"requires\": [\n        {\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.cppm\"\n        }\n      ]\n    }\n  ],\n  \"version\": 1\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "value.cppm",
+        "-MD",
+        "-MF",
+        "value.d",
+        "-o",
+        "value.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "api.cppm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.pcm",
+        "-o",
+        "api.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "value.pcm",
+        "-o",
+        "value.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "api.pcm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.pcm",
+        "-o",
+        "api.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "main.cpp",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.pcm",
+        "-fmodule-file=p04=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.pcm",
+        "-o",
+        "main.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "value.o",
+        "api.o",
+        "main.o",
+        "-o",
+        "app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "42\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang-scan-deps",
+        "-format=p1689",
+        "-compilation-database=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/compile_commands.json"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "{\n  \"revision\": 0,\n  \"rules\": [\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.cppm\"\n        }\n      ],\n      \"requires\": [\n        {\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/main.o\",\n      \"requires\": [\n        {\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.cppm\"\n        }\n      ]\n    }\n  ],\n  \"version\": 1\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "value.cppm",
+        "-MD",
+        "-MF",
+        "value.d",
+        "-o",
+        "value.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "api.cppm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.pcm",
+        "-o",
+        "api.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "value.pcm",
+        "-o",
+        "value.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "api.pcm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.pcm",
+        "-o",
+        "api.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "main.cpp",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.pcm",
+        "-fmodule-file=p04=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.pcm",
+        "-o",
+        "main.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "value.o",
+        "api.o",
+        "main.o",
+        "-o",
+        "app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "43\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang-scan-deps",
+        "-format=p1689",
+        "-compilation-database=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/compile_commands.json"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "{\n  \"revision\": 0,\n  \"rules\": [\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.cppm\"\n        }\n      ],\n      \"requires\": [\n        {\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/main.o\",\n      \"requires\": [\n        {\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.cppm\"\n        }\n      ]\n    }\n  ],\n  \"version\": 1\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "value.cppm",
+        "-MD",
+        "-MF",
+        "value.d",
+        "-o",
+        "value.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "api.cppm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.pcm",
+        "-o",
+        "api.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "value.pcm",
+        "-o",
+        "value.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "api.pcm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.pcm",
+        "-o",
+        "api.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "main.cpp",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.pcm",
+        "-fmodule-file=p04=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.pcm",
+        "-o",
+        "main.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "value.o",
+        "api.o",
+        "main.o",
+        "-o",
+        "app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "53\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang-scan-deps",
+        "-format=p1689",
+        "-compilation-database=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/compile_commands.json"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "{\n  \"revision\": 0,\n  \"rules\": [\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.cppm\"\n        }\n      ],\n      \"requires\": [\n        {\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/main.o\",\n      \"requires\": [\n        {\n          \"logical-name\": \"p04\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.cppm\"\n        }\n      ]\n    },\n    {\n      \"primary-output\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.o\",\n      \"provides\": [\n        {\n          \"is-interface\": true,\n          \"logical-name\": \"p04:value\",\n          \"source-path\": \"/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.cppm\"\n        }\n      ]\n    }\n  ],\n  \"version\": 1\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "value.cppm",
+        "-MD",
+        "-MF",
+        "value.d",
+        "-o",
+        "value.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "--precompile",
+        "api.cppm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.pcm",
+        "-o",
+        "api.pcm"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "value.pcm",
+        "-o",
+        "value.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "api.pcm",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.pcm",
+        "-o",
+        "api.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "-std=c++20",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-c",
+        "main.cpp",
+        "-fmodule-file=p04:value=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/value.pcm",
+        "-fmodule-file=p04=/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/api.pcm",
+        "-o",
+        "main.o"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/opt/homebrew/opt/llvm@20/bin/clang++",
+        "value.o",
+        "api.o",
+        "main.o",
+        "-o",
+        "app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn/app"
+      ],
+      "cwd": "/Users/like/workspace/cxx/tests/prototypes/p04/.runs/p04 nxnazrpn",
+      "returncode": 0,
+      "stdout": "53\n",
+      "stderr": ""
+    }
+  ],
+  "stages": [
+    {
+      "name": "initial",
+      "output": "42\n",
+      "bmi_sha256": {
+        "value.pcm": "27dfb170908238acc86e0d5434ce6eb233faf7a0458d63a91cc242ba2e078bd1",
+        "api.pcm": "4013a874e94a3826fc2df23e36336560357c23519ef2857278b142a1251b6006"
+      }
+    },
+    {
+      "name": "partition-edit",
+      "output": "43\n",
+      "bmi_sha256": {
+        "value.pcm": "2f3080405312836ba1643232c311b955876cf049f7d9b5cb8b4ceba3281da979",
+        "api.pcm": "8ab26275e6223775c8b44d0f509fd2924024d887722171bb3665ce50e925eae3"
+      }
+    },
+    {
+      "name": "generated-edit",
+      "output": "53\n",
+      "bmi_sha256": {
+        "value.pcm": "678b951937c54d89679ecfe7d5477cc9513dd096076490d9a04021af914f265f",
+        "api.pcm": "e58fbf38c75098bbe5c70048155b8d2a8c29293b2ee5ceb91ad662b62b4c5373"
+      }
+    },
+    {
+      "name": "clean-rebuild",
+      "output": "53\n",
+      "bmi_sha256": {
+        "value.pcm": "678b951937c54d89679ecfe7d5477cc9513dd096076490d9a04021af914f265f",
+        "api.pcm": "e58fbf38c75098bbe5c70048155b8d2a8c29293b2ee5ceb91ad662b62b4c5373"
+      }
+    }
+  ],
+  "status": "PASS",
+  "compiler": "/opt/homebrew/opt/llvm@20/bin/clang++",
+  "scanner": "/opt/homebrew/opt/llvm@20/bin/clang-scan-deps",
+  "tool_versions": [
+    "Homebrew clang version 20.1.8\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /opt/homebrew/Cellar/llvm@20/20.1.8/bin\nConfiguration file: /opt/homebrew/etc/clang/arm64-apple-darwin.cfg\n",
+    "/opt/homebrew/opt/llvm@20/bin/clang-scan-deps\nHomebrew LLVM version 20.1.8\n  Optimized build.\n"
+  ],
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n",
+  "sdk": "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk"
+}

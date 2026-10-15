@@ -64,6 +64,9 @@ def main():
             subprocess.run([sys.executable, str(ROOT / "tests" / suite),
                             "--cxx", str(output / "cxx"), "--compiler", compiler], check=True)
         subprocess.run([sys.executable, str(ROOT / "tests/tooling_test.py")], check=True)
+        subprocess.run([sys.executable, str(ROOT / "tests/prototypes/p02/run.py"),
+                        "--compiler", compiler], check=True)
+        subprocess.run([sys.executable, str(ROOT / "tests/prototypes/p04/test_runner.py")], check=True)
 
 
 if __name__ == "__main__":
