@@ -11,6 +11,17 @@ tasks:
     cmds:
       - '{{.TASK_EXE | shellQuote}} --list'
 
+  format:
+    desc: Format Python sources with Ruff
+    cmds:
+      - ruff format .
+
+  lint:
+    desc: Lint Python sources and check formatting with Ruff
+    cmds:
+      - ruff check .
+      - ruff format --check .
+
   bootstrap:
     desc: Build the seed and self-hosted tools without running tests
     cmds:

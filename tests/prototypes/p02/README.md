@@ -14,7 +14,7 @@
 
 ## 安装与运行
 
-前置条件：Python 3.8+、Linux/macOS、支持仓库所用 C++23 功能的 Clang 和标准库。使用仓库已有 `toml++`、`PicoSHA2`；运行器校验现有第三方清单，无需下载或安装 Python 包。
+前置条件：Python 3.14+、Linux/macOS、支持仓库所用 C++23 功能的 Clang 和标准库。使用仓库已有 `toml++`、`PicoSHA2`；运行器校验现有第三方清单，无需下载或安装 Python 包。
 
 在仓库根目录执行：
 

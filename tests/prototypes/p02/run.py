@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Compile and run the isolated P02 declaration/lock experiment with a selected Clang."""
+
 import argparse
 import hashlib
 import json
@@ -26,7 +27,9 @@ TIMEOUT = 60
 def command(argv, **kwargs):
     argv = [str(arg) for arg in argv]
     print("[command] " + shlex.join(argv), flush=True)
-    return subprocess.run(argv, text=True, capture_output=True, timeout=TIMEOUT, **kwargs)
+    return subprocess.run(
+        argv, text=True, capture_output=True, timeout=TIMEOUT, **kwargs
+    )
 
 
 def checked(argv):
@@ -54,7 +57,13 @@ class Prototype(unittest.TestCase):
                 process.kill()
             process.communicate(timeout=TIMEOUT)
 
-    def args(self, domain=("fixture-a", "debug", "target"), variant="base", mode="build", pause="none"):
+    def args(
+        self,
+        domain=("fixture-a", "debug", "target"),
+        variant="base",
+        mode="build",
+        pause="none",
+    ):
         return [BINARY, self.lock, self.registry, *domain, variant, mode, pause]
 
     def invoke(self, expected=None, **kwargs):
@@ -65,7 +74,10 @@ class Prototype(unittest.TestCase):
             print("[expected rejection] " + expected, flush=True)
         else:
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn("declaration calls=1 handles=stable metadata_reads=0 builder=destroyed", result.stdout)
+            self.assertIn(
+                "declaration calls=1 handles=stable metadata_reads=0 builder=destroyed",
+                result.stdout,
+            )
             self.assertIn("resolved calls=1", result.stdout)
             print(result.stdout, end="", flush=True)
         return result
@@ -76,22 +88,31 @@ class Prototype(unittest.TestCase):
         return json.loads(result.stdout)
 
     def sets(self):
-        return {tuple(item["domain"][key] for key in ("platform", "profile", "role")): item
-                for item in self.inspect()["resolution_sets"].values()}
+        return {
+            tuple(item["domain"][key] for key in ("platform", "profile", "role")): item
+            for item in self.inspect()["resolution_sets"].values()
+        }
 
     def add_releases(self):
         original = self.registry.read_text()
         # Same metadata, with genuinely newer direct and transitive versions available.
-        newer = "".join("[[packages]]" + block.replace('version = "1.0.0"', 'version = "1.1.0"')
-                        for block in original.split("[[packages]]")[1:]
-                        if '\nname = "widget"\n' in block or '\nname = "core"\n' in block)
+        newer = "".join(
+            "[[packages]]" + block.replace('version = "1.0.0"', 'version = "1.1.0"')
+            for block in original.split("[[packages]]")[1:]
+            if '\nname = "widget"\n' in block or '\nname = "core"\n' in block
+        )
         self.registry.write_text(original + "\n" + newer)
 
     def start_paused(self, **kwargs):
         args = [str(arg) for arg in self.args(**kwargs)]
         print("[command] " + shlex.join(args), flush=True)
-        process = subprocess.Popen(args, text=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
+        process = subprocess.Popen(
+            args,
+            text=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
         self.children.append(process)
         output = b""
         expected = ("checkpoint " + kwargs["pause"] + "\n").encode()
@@ -102,7 +123,9 @@ class Prototype(unittest.TestCase):
             ready, _, _ = select.select([process.stdout], [], [], remaining)
             self.assertTrue(ready, "Checkpoint timed out: " + output.decode())
             block = os.read(process.stdout.fileno(), 4096)
-            self.assertTrue(block, "Writer exited before checkpoint: " + output.decode())
+            self.assertTrue(
+                block, "Writer exited before checkpoint: " + output.decode()
+            )
             output += block
         self.assertIn(b"declaration calls=1", output)
         print(output.decode(), end="", flush=True)
@@ -116,17 +139,31 @@ class Prototype(unittest.TestCase):
 
     def snapshot(self):
         # Includes guard files, orphan stages and mtimes: locked paths must be read-only.
-        return {str(path.relative_to(self.root)): (path.read_bytes(), path.stat().st_mtime_ns)
-                for path in self.root.rglob("*") if path.is_file()}
+        return {
+            str(path.relative_to(self.root)): (
+                path.read_bytes(),
+                path.stat().st_mtime_ns,
+            )
+            for path in self.root.rglob("*")
+            if path.is_file()
+        }
 
     def test_deferred_resolution_and_old_choices(self):
         self.invoke()
         initial = self.sets()[("fixture-a", "debug", "target")]
         self.assertEqual(set(initial["packages"]), {"widget", "core", "debug-helper"})
         self.assertEqual(len(initial["declaration"]["roots"]), 1)
-        self.assertEqual(initial["declaration"]["links"], [
-            {"target": "app", "package": "widget", "export": "widget::widget"},
-            {"target": "second-app", "package": "widget", "export": "widget::widget"}])
+        self.assertEqual(
+            initial["declaration"]["links"],
+            [
+                {"target": "app", "package": "widget", "export": "widget::widget"},
+                {
+                    "target": "second-app",
+                    "package": "widget",
+                    "export": "widget::widget",
+                },
+            ],
+        )
         # A separate empty project produces the same canonical lock bytes.
         repeat = self.args()
         repeat[1] = self.root / "repeat" / "cxx.lock"
@@ -141,7 +178,9 @@ class Prototype(unittest.TestCase):
         for name, value in initial["packages"].items():
             self.assertEqual(updated["packages"][name], value)
         self.assertEqual(updated["packages"]["extra"]["dependencies"], {"core": 1})
-        self.assertNotEqual(initial["declaration_fingerprint"], updated["declaration_fingerprint"])
+        self.assertNotEqual(
+            initial["declaration_fingerprint"], updated["declaration_fingerprint"]
+        )
         self.assertNotIn(str(self.root), self.lock.read_text())
         self.assertNotIn("index", self.lock.read_text())
 
@@ -149,18 +188,25 @@ class Prototype(unittest.TestCase):
         self.invoke()
         original = self.sets()
         self.add_releases()
-        for domain in (("fixture-a", "release", "target"), ("fixture-a", "debug", "host"),
-                       ("fixture-b", "debug", "target")):
+        for domain in (
+            ("fixture-a", "release", "target"),
+            ("fixture-a", "debug", "host"),
+            ("fixture-b", "debug", "target"),
+        ):
             self.invoke(domain=domain)
         sets = self.sets()
         self.assertEqual(len(sets), 4)
-        self.assertEqual(sets[("fixture-a", "debug", "target")], next(iter(original.values())))
+        self.assertEqual(
+            sets[("fixture-a", "debug", "target")], next(iter(original.values()))
+        )
         release = sets[("fixture-a", "release", "target")]["packages"]
         self.assertEqual(set(release), {"widget", "core"})
         self.assertEqual(release["widget"]["version"], "1.1.0")
         self.assertEqual(release["core"]["version"], "1.1.0")
         self.assertIn("host-helper", sets[("fixture-a", "debug", "host")]["packages"])
-        self.assertIn("platform-helper", sets[("fixture-b", "debug", "target")]["packages"])
+        self.assertIn(
+            "platform-helper", sets[("fixture-b", "debug", "target")]["packages"]
+        )
         for value in sets.values():
             self.assertEqual(value["toolchain"]["source"], "fixture:toolchain")
 
@@ -175,15 +221,21 @@ class Prototype(unittest.TestCase):
         self.assertEqual(snapshot, self.snapshot())
         self.invoke(mode="locked", variant="added", expected="declaration mismatch")
         self.assertEqual(snapshot, self.snapshot())
-        self.invoke(mode="locked", domain=("fixture-a", "release", "target"), expected="missing the requested domain")
+        self.invoke(
+            mode="locked",
+            domain=("fixture-a", "release", "target"),
+            expected="missing the requested domain",
+        )
         self.assertEqual(snapshot, self.snapshot())
 
     def test_failures_preserve_lock(self):
         self.invoke()
         original = self.lock.read_bytes()
-        for variant, message in (("incompatible", "requires explicit update"),
-                                 ("bad-export", "Missing package export"),
-                                 ("script-fail", "Fixture declaration failed")):
+        for variant, message in (
+            ("incompatible", "requires explicit update"),
+            ("bad-export", "Missing package export"),
+            ("script-fail", "Fixture declaration failed"),
+        ):
             self.invoke(variant=variant, expected=message)
             self.assertEqual(self.lock.read_bytes(), original)
         self.assertEqual(list(self.root.glob("*.candidate.*")), [])
@@ -191,14 +243,25 @@ class Prototype(unittest.TestCase):
     def test_metadata_identity_and_invalid_lock(self):
         self.invoke()
         original = self.lock.read_bytes()
-        self.registry.write_text(self.registry.read_text().replace('exports = ["core::core"]',
-                                                                  'exports = ["core::changed"]'))
+        self.registry.write_text(
+            self.registry.read_text().replace(
+                'exports = ["core::core"]', 'exports = ["core::changed"]'
+            )
+        )
         self.invoke(expected="Locked metadata identity changed")
         self.assertEqual(self.lock.read_bytes(), original)
         self.registry.write_bytes((HERE / "registry.toml").read_bytes())
-        for invalid, message in ((original.replace(b"lock_format = 1", b"lock_format = 99"), "Unknown prototype lock format"),
-                                 (b"lock_format = [", "Error while parsing"),
-                                 (original.replace(b'major = 1', b'major = 2', 1), "requires explicit update")):
+        for invalid, message in (
+            (
+                original.replace(b"lock_format = 1", b"lock_format = 99"),
+                "Unknown prototype lock format",
+            ),
+            (b"lock_format = [", "Error while parsing"),
+            (
+                original.replace(b"major = 1", b"major = 2", 1),
+                "requires explicit update",
+            ),
+        ):
             self.lock.write_bytes(invalid)
             self.invoke(expected=message)
             self.assertEqual(self.lock.read_bytes(), invalid)
@@ -208,10 +271,16 @@ class Prototype(unittest.TestCase):
         original = self.lock.read_bytes()
         fixture = self.registry.read_text()
         # Failure is on a newly requested package; all previously locked metadata stays intact.
-        for dependency, expected in (("absent", "Missing compatible metadata"),
-                                     ("extra", "Metadata cycle")):
-            self.registry.write_text(fixture.replace('dependencies = [{ name = "core", major = 1 }]',
-                                                     'dependencies = [{ name = "' + dependency + '", major = 1 }]'))
+        for dependency, expected in (
+            ("absent", "Missing compatible metadata"),
+            ("extra", "Metadata cycle"),
+        ):
+            self.registry.write_text(
+                fixture.replace(
+                    'dependencies = [{ name = "core", major = 1 }]',
+                    'dependencies = [{ name = "' + dependency + '", major = 1 }]',
+                )
+            )
             self.invoke(variant="added", expected=expected)
             self.assertEqual(self.lock.read_bytes(), original)
 
@@ -252,14 +321,20 @@ class Prototype(unittest.TestCase):
                     writer = self.start_paused(variant="added", pause=phase)
                     if phase == "before-publish":
                         # A complete, independently parsed candidate exists, but is not published.
-                        self.inspect(path=str(self.lock) + ".candidate." + str(writer.pid))
+                        self.inspect(
+                            path=str(self.lock) + ".candidate." + str(writer.pid)
+                        )
                     self.kill_writer(writer)
                     if phase == "before-publish":
-                        self.assertEqual(self.lock.read_bytes() if self.lock.exists() else None, old)
+                        self.assertEqual(
+                            self.lock.read_bytes() if self.lock.exists() else None, old
+                        )
                         if existing:
                             self.inspect()
                     else:
-                        self.assertIn("extra", next(iter(self.sets().values()))["packages"])
+                        self.assertIn(
+                            "extra", next(iter(self.sets().values()))["packages"]
+                        )
                         published = self.snapshot()
                         self.invoke(variant="added", mode="locked")
                         self.assertEqual(self.snapshot(), published)
@@ -271,7 +346,9 @@ class Prototype(unittest.TestCase):
 def main():
     global BINARY, WORK
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--compiler", default=os.environ.get("CXX_BOOTSTRAP_COMPILER", "clang++"))
+    parser.add_argument(
+        "--compiler", default=os.environ.get("CXX_BOOTSTRAP_COMPILER", "clang++")
+    )
     args = parser.parse_args()
     if sys.platform not in ("darwin", "linux"):
         parser.error("This prototype uses the existing Linux/macOS POSIX support")
@@ -288,23 +365,51 @@ def main():
     manifest = json.loads((ROOT / "third_party/manifest.json").read_text())
     for dep in manifest["dependencies"]:
         for name, digest in dep["files"].items():
-            if hashlib.sha256((ROOT / "third_party" / name).read_bytes()).hexdigest() != digest:
+            if (
+                hashlib.sha256((ROOT / "third_party" / name).read_bytes()).hexdigest()
+                != digest
+            ):
                 raise RuntimeError("Vendored dependency checksum mismatch: " + name)
     with tempfile.TemporaryDirectory(prefix="cxx p02 ") as temporary:
         WORK = pathlib.Path(temporary)
         BINARY = WORK / "p02"
         common = [compiler, "-O2", "-Wall", "-Wextra", "-Wpedantic"]
         public = WORK / "declaration.o"
-        checked(common + ["-std=c++17", "-pedantic-errors", "-c", HERE / "declaration.cpp", "-o", public])
-        checked(common + ["-std=c++23", "-I" + str(ROOT / "src"),
-                          "-isystem", ROOT / "third_party/picosha2",
-                          "-isystem", ROOT / "third_party/tomlplusplus",
-                          HERE / "prototype.cpp", ROOT / "src/support.cpp", public, "-o", BINARY])
+        checked(
+            common
+            + [
+                "-std=c++17",
+                "-pedantic-errors",
+                "-c",
+                HERE / "declaration.cpp",
+                "-o",
+                public,
+            ]
+        )
+        checked(
+            common
+            + [
+                "-std=c++23",
+                "-I" + str(ROOT / "src"),
+                "-isystem",
+                ROOT / "third_party/picosha2",
+                "-isystem",
+                ROOT / "third_party/tomlplusplus",
+                HERE / "prototype.cpp",
+                ROOT / "src/support.cpp",
+                public,
+                "-o",
+                BINARY,
+            ]
+        )
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(Prototype)
         result = unittest.TextTestRunner(verbosity=2, stream=sys.stdout).run(suite)
         if not result.wasSuccessful():
             return 1
-        print("P02 PASS: 8 tests, including competing writers and 4 publication interruption cases", flush=True)
+        print(
+            "P02 PASS: 8 tests, including competing writers and 4 publication interruption cases",
+            flush=True,
+        )
     return 0
 
 

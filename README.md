@@ -28,7 +28,7 @@ Package management, toolchain downloads, `cxx.lock`, shared/remote caches, Modul
 - Linux or macOS.
 - Clang with the C++23 support needed to build CXX and its Runtime, plus the platform C++ standard library/SDK. User scripts and targets can still use C++17.
 - `llvm-ar` or `ar`.
-- Python 3.8 or later for the seed build and tests.
+- Python 3.14 or later for the seed build and tests. The repository pins Python 3.14 in `.python-version`; ensure `python3 --version` reports 3.14 or later.
 
 The implementation uses C++23 explicit object parameters for recursive lambdas, `std::ranges::contains`, and `std::string::contains`. The host compiler and standard library must support these features. Internal headers check the required library feature macros; compiling the Runtime verifies the language syntax. These requirements do not apply to the C++17 public SDK headers.
 

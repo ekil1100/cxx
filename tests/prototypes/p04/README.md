@@ -22,7 +22,7 @@ Compiler Adapter、DAG、Scheduler 和缓存均未参与。当前 M0 的 Modules
 
 使用已有工具，无新增包和工具安装步骤。要求：
 
-- Python 3.8 或更新版本。
+- Python 3.14 或更新版本。
 - Linux/macOS 上可执行的 Clang、配套 `clang-scan-deps`、系统链接器及 C++ 标准库头文件。
 - 编译器支持 `-std=c++20`、命名模块、接口分区、`--precompile`、显式 `-fmodule-file` 映射。
 - 扫描器支持编译数据库及 `-format=p1689`，输出版本为 1。

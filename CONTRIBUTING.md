@@ -9,9 +9,17 @@ Use Linux or macOS with:
 - Clang and a C++ standard library that support the C++23 features used by CXX: explicit object parameters, `std::ranges::contains`, and `std::string::contains`.
 - The platform SDK and linker.
 - `llvm-ar` or `ar`.
-- Python 3.8 or later for source bootstrap and test orchestration.
+- Python 3.14 or later for source bootstrap and test orchestration.
 
 The [CI workflow](.github/workflows/ci.yml) selects LLVM 20 from the official LLVM APT repository on Ubuntu 24.04 and Homebrew LLVM 20 on macOS 14. Ubuntu Clang 18.1.3 crashed while generating code for the Runtime's explicit-object-parameter lambdas in CI; use the configured LLVM 20 toolchain. Compiler and standard-library capabilities both matter; accepting `-std=c++23` alone is insufficient. See M0 status for verified environments.
+
+The repository pins Python 3.14 in `.python-version`, and CI uses that version on both platforms. Ensure `python3 --version` reports 3.14 or later before running the commands below. With [uv](https://docs.astral.sh/uv/), set up a local environment with:
+
+```sh
+uv python install 3.14
+uv venv --python 3.14
+source .venv/bin/activate
+```
 
 CMake and Ninja are not required. Third-party sources are vendored; the bootstrap script verifies their checksums before compiling.
 
@@ -22,6 +30,8 @@ Install [Task v3](https://taskfile.dev/docs/installation) to use `Taskfile.yml`.
 | Command | Purpose |
 |---|---|
 | `task` | List available tasks |
+| `task format` | Format Python sources with Ruff |
+| `task lint` | Lint Python sources and check formatting |
 | `task bootstrap` | First build, without running tests |
 | `task build` | Daily native build |
 | `task build -- cxx -v` | Build one target with verbose output |
@@ -83,6 +93,18 @@ Use `CXX_BOOTSTRAP_ARCHIVER` when an explicit archiver is required. These enviro
 Python remains responsible for dependency checksum validation and test orchestration. Direct `cxx build` does not perform the manifest check. The seed and formal targets use C++23, `-O2`, `-Wall -Wextra -Wpedantic`, and system includes for third-party headers. In `build.cpp`, these are selected with `.optimization(cxx::Optimization::speed)`, `.warnings()`, and `.system_include(...)`. Optimization and warning settings are target-local; system includes follow usage visibility. These settings cover the current self-build without introducing a full Profile system. Bootstrap-generated Driver/Runtime compilation keeps its existing flags.
 
 If changes break self-building, fix the source and rerun `python3 scripts/build.py` to regenerate the seed. Bootstrap and build files should evolve together when the source layout changes.
+
+## Python formatting and linting
+
+Use Ruff 0.16.8 for Python formatting and linting. Install it with `uv tool install ruff==0.16.8` or `python3 -m pip install ruff==0.16.8` in your virtual environment. `ruff.toml` sets the Python 3.14 target and pins the Ruff version to keep local and CI results consistent.
+
+```sh
+ruff format .
+ruff check .
+ruff format --check .
+```
+
+The equivalent Task commands are `task format` and `task lint`. CI checks lint and formatting without changing files. The lint configuration uses Ruff's default rules (`E4`, `E7`, `E9`, and `F`).
 
 ## Tests and verification
 

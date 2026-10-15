@@ -8,6 +8,20 @@ permissions:
   contents: read
 
 jobs:
+  python-quality:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - name: Install Ruff
+        run: python3 -m pip install ruff==0.16.8
+      - name: Lint and check Python formatting
+        run: |
+          ruff check .
+          ruff format --check .
+
   native:
     strategy:
       fail-fast: false
@@ -16,6 +30,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
       - name: Install and select LLVM 20 on Linux
         if: runner.os == 'Linux'
         shell: bash

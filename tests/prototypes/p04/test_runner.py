@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Focused negative checks for the prototype's scan contract and tool selection."""
+
 import copy
 import importlib.util
 import json
@@ -18,8 +19,11 @@ class RunnerContract(unittest.TestCase):
     def setUp(self):
         # Use captured real scanner output, with its recorded absolute paths.
         report = json.loads((ROOT / "evidence/llvm20.json").read_text())
-        command = next(item for item in report["commands"]
-                       if "-format=p1689" in item["argv"] and item["returncode"] == 0)
+        command = next(
+            item
+            for item in report["commands"]
+            if "-format=p1689" in item["argv"] and item["returncode"] == 0
+        )
         self.directory = Path(command["cwd"])
         self.data = json.loads(command["stdout"])
 
@@ -27,8 +31,16 @@ class RunnerContract(unittest.TestCase):
         runner.validate_scan(self.data, self.directory)
 
     def test_reject_bad_scan(self):
-        for mutation in ("version", "missing-rule", "duplicate-rule", "wrong-import",
-                         "wrong-provider", "non-interface", "wrong-source", "wrong-output"):
+        for mutation in (
+            "version",
+            "missing-rule",
+            "duplicate-rule",
+            "wrong-import",
+            "wrong-provider",
+            "non-interface",
+            "wrong-source",
+            "wrong-output",
+        ):
             with self.subTest(mutation=mutation):
                 data = copy.deepcopy(self.data)
                 provider = next(rule for rule in data["rules"] if rule.get("provides"))
@@ -56,12 +68,23 @@ class RunnerContract(unittest.TestCase):
         for option in ("--compiler", "--scanner"):
             with self.subTest(option=option):
                 result = subprocess.run(
-                    [sys.executable, str(ROOT / "run.py"), "--compiler", sys.executable,
-                     option, str(ROOT / "missing-tool")],
-                    text=True, capture_output=True, timeout=10)
+                    [
+                        sys.executable,
+                        str(ROOT / "run.py"),
+                        "--compiler",
+                        sys.executable,
+                        option,
+                        str(ROOT / "missing-tool"),
+                    ],
+                    text=True,
+                    capture_output=True,
+                    timeout=10,
+                )
                 self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-                self.assertIn("Required executable not found: " + str(ROOT / "missing-tool"),
-                              result.stderr)
+                self.assertIn(
+                    "Required executable not found: " + str(ROOT / "missing-tool"),
+                    result.stderr,
+                )
                 self.assertNotIn("PASS:", result.stdout)
 
 
