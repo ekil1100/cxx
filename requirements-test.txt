@@ -1,0 +1,2 @@
+# Python test runner; production builds do not require this dependency.
+pytest==9.1.1

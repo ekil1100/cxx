@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Compile and run the isolated P02 declaration/lock experiment with a selected Clang."""
 
-import argparse
 import hashlib
 import json
 import os
@@ -9,13 +8,15 @@ import pathlib
 import platform
 import select
 import shlex
-import shutil
 import signal
 import subprocess
 import sys
-import tempfile
 import time
 import unittest
+
+import pytest
+
+pytestmark = pytest.mark.prototype
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
@@ -343,20 +344,15 @@ class Prototype(unittest.TestCase):
                     self.assertIn("extra", next(iter(self.sets().values()))["packages"])
 
 
-def main():
-    global BINARY, WORK
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--compiler", default=os.environ.get("CXX_BOOTSTRAP_COMPILER", "clang++")
-    )
-    args = parser.parse_args()
+@pytest.fixture(scope="module", autouse=True)
+def prepared_prototype(compiler, tmp_path_factory):
     if sys.platform not in ("darwin", "linux"):
-        parser.error("This prototype uses the existing Linux/macOS POSIX support")
-    compiler = shutil.which(args.compiler)
-    if not compiler:
-        parser.error("Compiler not found: " + args.compiler)
-    # Match existing runners: absolute(), not resolve(), preserves symlink/.. semantics.
-    compiler = str(pathlib.Path(compiler).absolute())
+        pytest.skip("This prototype uses the existing Linux/macOS POSIX support")
+    prepare(compiler, tmp_path_factory.mktemp("cxx p02 "))
+
+
+def prepare(compiler, work):
+    global BINARY, WORK
     print("[platform] " + platform.platform(), flush=True)
     print("[python] " + sys.version.replace("\n", " "), flush=True)
     checked([compiler, "--version"])
@@ -370,52 +366,34 @@ def main():
                 != digest
             ):
                 raise RuntimeError("Vendored dependency checksum mismatch: " + name)
-    with tempfile.TemporaryDirectory(prefix="cxx p02 ") as temporary:
-        WORK = pathlib.Path(temporary)
-        BINARY = WORK / "p02"
-        common = [compiler, "-O2", "-Wall", "-Wextra", "-Wpedantic"]
-        public = WORK / "declaration.o"
-        checked(
-            common
-            + [
-                "-std=c++17",
-                "-pedantic-errors",
-                "-c",
-                HERE / "declaration.cpp",
-                "-o",
-                public,
-            ]
-        )
-        checked(
-            common
-            + [
-                "-std=c++23",
-                "-I" + str(ROOT / "src"),
-                "-isystem",
-                ROOT / "third_party/picosha2",
-                "-isystem",
-                ROOT / "third_party/tomlplusplus",
-                HERE / "prototype.cpp",
-                ROOT / "src/support.cpp",
-                public,
-                "-o",
-                BINARY,
-            ]
-        )
-        suite = unittest.defaultTestLoader.loadTestsFromTestCase(Prototype)
-        result = unittest.TextTestRunner(verbosity=2, stream=sys.stdout).run(suite)
-        if not result.wasSuccessful():
-            return 1
-        print(
-            "P02 PASS: 8 tests, including competing writers and 4 publication interruption cases",
-            flush=True,
-        )
-    return 0
-
-
-if __name__ == "__main__":
-    try:
-        sys.exit(main())
-    except (RuntimeError, subprocess.SubprocessError) as error:
-        print("P02 failed: " + str(error), file=sys.stderr)
-        sys.exit(1)
+    WORK = pathlib.Path(work)
+    BINARY = WORK / "p02"
+    common = [compiler, "-O2", "-Wall", "-Wextra", "-Wpedantic"]
+    public = WORK / "declaration.o"
+    checked(
+        common
+        + [
+            "-std=c++17",
+            "-pedantic-errors",
+            "-c",
+            HERE / "declaration.cpp",
+            "-o",
+            public,
+        ]
+    )
+    checked(
+        common
+        + [
+            "-std=c++23",
+            "-I" + str(ROOT / "src"),
+            "-isystem",
+            ROOT / "third_party/picosha2",
+            "-isystem",
+            ROOT / "third_party/tomlplusplus",
+            HERE / "prototype.cpp",
+            ROOT / "src/support.cpp",
+            public,
+            "-o",
+            BINARY,
+        ]
+    )

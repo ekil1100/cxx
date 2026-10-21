@@ -19,7 +19,10 @@ The repository pins Python 3.14 in `.python-version`, and CI uses that version o
 uv python install 3.14
 uv venv --python 3.14
 source .venv/bin/activate
+uv pip install -r requirements-test.txt
 ```
+
+`requirements-test.txt` pins pytest 9.1.1. With a pip-enabled environment, `python3 -m pip install -r requirements-test.txt` is equivalent. Keep this environment active for `task test` and `task e2e`. Plain bootstrap/build commands need no Python test dependencies.
 
 CMake and Ninja are not required. Third-party sources are vendored; the bootstrap script verifies their checksums before compiling.
 
@@ -35,8 +38,11 @@ Install [Task v3](https://taskfile.dev/docs/installation) to use `Taskfile.yml`.
 | `task bootstrap` | First build, without running tests |
 | `task build` | Daily native build |
 | `task build -- cxx -v` | Build one target with verbose output |
+| `task compdb` | Build targets and generate root `compile_commands.json` for clangd |
 | `task unit` | Build and run C++ unit tests |
-| `task test` | Source bootstrap, self-build, and complete verification |
+| `task test` | Source bootstrap, self-build, GoogleTest, and all pytest checks |
+| `task e2e -- -k noop` | Selected pytest checks against an existing build |
+| `task e2e -- -m tooling` | Tooling checks without a native build |
 | `task bench` | Build CXX and write `build/benchmark.json` |
 
 Run `task bootstrap` before `task build`, `task unit`, or `task bench`. Select a compiler with `task bootstrap COMPILER=/path/to/clang++` and use the same `COMPILER` value for later tasks. By default, tasks use `CXX_BOOTSTRAP_COMPILER` from the environment, or `clang++` when it is unset. Task is optional; all direct commands below remain available.
@@ -86,13 +92,20 @@ Add `-v` to inspect native compiler commands. For a non-default compiler, set th
 
 ```sh
 CXX_BOOTSTRAP_COMPILER=/path/to/clang++ ./build/cxx build
+CXX_BOOTSTRAP_COMPILER=/path/to/clang++ ./build/support_test
 ```
+
+The unit executable uses `CXX_BOOTSTRAP_COMPILER` for compiler-dependent scans and defaults to `clang++` only when the variable is unset. An empty value is an error. `task unit COMPILER=/path/to/clang++` passes the selection to both the build and test execution.
 
 Use `CXX_BOOTSTRAP_ARCHIVER` when an explicit archiver is required. These environment choices affect incremental keys; changing them can cause a rebuild. `--compiler` is an option of the Python tools, not a CXX CLI option.
 
 Python remains responsible for dependency checksum validation and test orchestration. Direct `cxx build` does not perform the manifest check. The seed and formal targets use C++23, `-O2`, `-Wall -Wextra -Wpedantic`, and system includes for third-party headers. In `build.cpp`, these are selected with `.optimization(cxx::Optimization::speed)`, `.warnings()`, and `.system_include(...)`. Optimization and warning settings are target-local; system includes follow usage visibility. These settings cover the current self-build without introducing a full Profile system. Bootstrap-generated Driver/Runtime compilation keeps its existing flags.
 
 If changes break self-building, fix the source and rerun `python3 scripts/build.py` to regenerate the seed. Bootstrap and build files should evolve together when the source layout changes.
+
+### Compilation database
+
+After bootstrap, run `task compdb` to generate the checkout's `compile_commands.json`. Use `task compdb COMPILER=/path/to/clang++` to select a compiler. The helper uses CXX's verbose dependency scans, so it captures current target flags even on a no-op build. It includes declared project targets and excludes bootstrap Runtime/Driver commands. Regenerate it after changing `build.cpp` or compiler settings. The generated file is ignored by Git.
 
 ## Python formatting and linting
 
@@ -119,15 +132,32 @@ The unified command already runs all suites below; there is no need to repeat th
 
 | Check | Command | Coverage |
 |---|---|---|
-| C++ unit tests | `./build/support_test` | Hashing, process execution, publication, and SDK ownership |
-| Self-hosting | `python3 tests/self_host.py --cxx build/cxx` | A real self-rebuild through the short entrypoint, SDK paths, no-op reuse, and an observable source change |
-| Integration | `python3 tests/integration.py --cxx build/cxx` | CLI, graph semantics, language modes, incremental correctness, and failures |
-| Regressions | `python3 tests/regressions.py --cxx build/cxx` | Special paths, output collisions, terminal handoff, and signals |
-| Tooling | `python3 tests/tooling_test.py` | Compiler propagation, output links, and benchmark metadata |
-| P02 prototype | `python3 tests/prototypes/p02/run.py --compiler /path/to/clang++` | Single declaration, deferred binding, and Lock publication |
-| P04 runner | `python3 tests/prototypes/p04/test_runner.py` | Scan contract and missing-tool diagnostics |
+| C++ unit tests | `./build/support_test` | GoogleTest cases for hashing, process execution, publication, and SDK ownership |
+| Self-hosting | `python3 -m pytest tests/self_host.py --cxx=build/cxx` | A real self-rebuild through the short entrypoint, SDK paths, no-op reuse, and an observable source change |
+| Integration | `python3 -m pytest tests/integration.py --cxx=build/cxx` | CLI, graph semantics, language modes, incremental correctness, and failures |
+| Regressions | `python3 -m pytest tests/regressions.py --cxx=build/cxx` | Special paths, output collisions, terminal handoff, and signals |
+| M1 libraries | `python3 -m pytest tests/m1_libraries.py --cxx=build/cxx` | Shared/object linking, visibility, runtime relocation, and incremental builds |
+| M1 generated files | `python3 -m pytest tests/m1_generated.py --cxx=build/cxx` | Generator ordering, cache behavior, output publication, and failure recovery |
+| M1 test/install | `python3 -m pytest tests/m1_test_install.py --cxx=build/cxx` | Test execution, installation selection, runtime relocation, and destination safety |
+| Tooling | `python3 -m pytest -m tooling` | Compiler propagation, output links, and benchmark metadata |
+| P02 prototype | `python3 -m pytest tests/prototypes/p02/run.py --compiler=/path/to/clang++` | Single declaration, deferred binding, and Lock publication |
+| P04 runner | `python3 -m pytest tests/prototypes/p04/test_runner.py` | Scan contract and missing-tool diagnostics |
 
-Pass `--compiler /path/to/clang++` to the self-hosting, integration, and regression suites when testing a non-default compiler. Build current artifacts before running a suite directly. Add a regression test that exercises the actual failure path when fixing a bug.
+The C++ suite uses pinned GoogleTest v1.18.0, compiled by CXX as a test-only static library. `build.cpp` also registers it as `support`, so `./build/cxx test support` builds and runs it through CXX. The executable provides standard GoogleTest discovery, filtering, and reports:
+
+```sh
+./build/support_test --gtest_list_tests
+./build/support_test --gtest_filter='FileActionTest.*'
+./build/support_test --gtest_output=xml:build/unit-results.xml
+```
+
+The custom test main retains subprocess entrypoints used by process regressions; it does not link `gtest_main`. Python end-to-end tests run under pytest; their existing `unittest.TestCase` assertions and setup/cleanup are retained. GoogleMock is not included. See the [vendored dependency notes](third_party/googletest/README.md) for provenance and scope.
+
+Pass `--compiler=/path/to/clang++` to the self-hosting, integration, regression, M1 library, generated-file, and test/install suites when testing a non-default compiler. Build current artifacts before running a suite directly. Add a regression test that exercises the actual failure path when fixing a bug.
+
+For direct pytest commands, always use `--cxx=PATH` and `--compiler=PATH` (quote values containing spaces, for example `--compiler="/path with spaces/clang++"`). The `=` keeps existing executable paths out of pytest's initial root-directory and conftest discovery. Separate path values can select an external root or load another checkout's conftest before these options are registered. The standalone `scripts/build.py` and benchmark argparse interfaces still accept separate values.
+
+The full `--test` suite uses one pytest session and writes `pytest-results.xml` under the selected build output directory. CI uploads this report even when tests fail. Use `-k` for name expressions, `-m e2e`, `-m prototype`, or `-m tooling` for groups, and `--junitxml=build/selected-results.xml` for a focused report. `--collect-only` and tooling-only selection work without a compiler or built CXX. E2E fixtures validate `--cxx` and `--compiler` when selected; P02 compiles its fixture only when its tests are selected. Tests remain sequential; xdist is not configured because some classes share a project directory.
 
 The full `--test` suite includes P02 and the P04 runner checks. The real Modules prototype needs a matching upstream Clang and `clang-scan-deps`, and runs separately (also configured in CI):
 

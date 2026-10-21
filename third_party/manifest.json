@@ -19,6 +19,52 @@
         "picosha2/LICENSE": "6c30eb1f37554ec4199cb82a8c86d9e7a852da78a757832bebb03ac9ddc44ff1",
         "picosha2/picosha2.h": "b13c180161ffac8d0adc81e033e493c409457c4d1258ab9781ac80579ba3bdd8"
       }
+    },
+    {
+      "name": "googletest",
+      "repository": "https://github.com/google/googletest",
+      "tag": "v1.18.0",
+      "revision": "063de7e9578f82b369302001269680b4b1553359",
+      "license": "BSD-3-Clause",
+      "files": {
+        "googletest/LICENSE": "9702de7e4117a8e2b20dafab11ffda58c198aede066406496bef670d40a22138",
+        "googletest/README.md": "a3d33c5a832f58e3fe30047c0b2bd2259fee4fe7e762ae3543b91c02c32276af",
+        "googletest/googletest/include/gtest/gtest-assertion-result.h": "c6264d766e880c30452da03c1cf783230f7152233612f13cebff6177f6527cec",
+        "googletest/googletest/include/gtest/gtest-death-test.h": "d70139e593088f79c9f25ba528ce212fab3cdf9c350fb3cceaa91e1e94d6af00",
+        "googletest/googletest/include/gtest/gtest-matchers.h": "7116aca6c9c224d8015bf74866e21994231f972a1af3bfceb6dc88e13e48690f",
+        "googletest/googletest/include/gtest/gtest-message.h": "26f2e9ea9dc21b63eb78d4d3eed423ed00f28bdc6fccc735cff94da0e9c8c55f",
+        "googletest/googletest/include/gtest/gtest-param-test.h": "7a246e017cb84010ae4bad5b6f789fb16941b4e46a130ffb8de9f328fa19ee78",
+        "googletest/googletest/include/gtest/gtest-printers.h": "69428a5fa909fd7f8f3bfe1d4f1a8be9a260375bceab738b8813fa4c2f5c9ff4",
+        "googletest/googletest/include/gtest/gtest-spi.h": "490f165098688c18d053a4ba57b2812bd97535b90af514f5a916116a230374ef",
+        "googletest/googletest/include/gtest/gtest-test-part.h": "2ba7bcb638f82889a619d52a5e28d4f9dc0aefd718a590beabd35cce8c27550a",
+        "googletest/googletest/include/gtest/gtest-typed-test.h": "d5c7a2853a4f250cd172f7d4218298f6aa9aa2df219210231e4877cd91bc7790",
+        "googletest/googletest/include/gtest/gtest.h": "c6f886e33c2e426d6f634112b12b0041aa0bad85b9f897be853b083c14aea169",
+        "googletest/googletest/include/gtest/gtest_pred_impl.h": "85e850e735a42ebb5f9a01a018708c1c0b9b7d83c94b14b7d5d29512c00b6ffd",
+        "googletest/googletest/include/gtest/gtest_prod.h": "3c6301ef533db8686e474dd5a0de4d98a31cbb630e2273f712472d1be25aa261",
+        "googletest/googletest/include/gtest/internal/custom/README.md": "608ec5ac574a6e64e4fc2f4bce2cfc7ff753a04d6822d6ff96e43fff51c6ccc1",
+        "googletest/googletest/include/gtest/internal/custom/gtest-port.h": "5e06747c9e8b86e9d841fabd61c2f045b2bb1133716f127be4a963ced1c44e01",
+        "googletest/googletest/include/gtest/internal/custom/gtest-printers.h": "b95afda2426e8c4f09c11d3296d522fb336b248c0da7e078388db4bb072c2166",
+        "googletest/googletest/include/gtest/internal/custom/gtest.h": "21d20a1c64ea38c20c4b12337c261a1a18989d2a30710a83dfb5cd9a3bb3c55e",
+        "googletest/googletest/include/gtest/internal/gtest-death-test-internal.h": "5a81ad35daf1049940c677b38c908945040cc25f07366b3ddf577ce72d8c44f1",
+        "googletest/googletest/include/gtest/internal/gtest-filepath.h": "584be91365316bf97fa7e3fd9f21f595919c48691f0c87071d2b7f739aaabcc0",
+        "googletest/googletest/include/gtest/internal/gtest-internal.h": "57b904e1b1763a9ac5f381db3717a92e285e707adf093d0f17c5cfc9603a6f34",
+        "googletest/googletest/include/gtest/internal/gtest-param-util.h": "869ec29efd36f14b75446b06de5bd58491da2b77575d092e67cab3583bb10e7a",
+        "googletest/googletest/include/gtest/internal/gtest-port-arch.h": "58ca63b3540d7752466cd34b6c87f9fb5605f5aa620fdabe0179e82f0c12e556",
+        "googletest/googletest/include/gtest/internal/gtest-port.h": "19d5e5bfcba9fb952e46352218d626f6e1778ed5f6186cc6770bcfc7d8a672d0",
+        "googletest/googletest/include/gtest/internal/gtest-string.h": "794b59f7afd2fbfb9fdfd133244903b4904e39d16d45253a85f1b89c196285ac",
+        "googletest/googletest/include/gtest/internal/gtest-type-util.h": "94336b1703807db6d9d2b729b5a30cf53016fd236b14774af118467d27f94ad8",
+        "googletest/googletest/src/gtest-all.cc": "972d3016860f9aa6452e078cf77406290fb7003b66fd6c0744a030bd1c323606",
+        "googletest/googletest/src/gtest-assertion-result.cc": "dbd2235676dcc0ef6409108a4041e05442fc6895735a5561d71151e6a14296bb",
+        "googletest/googletest/src/gtest-death-test.cc": "2881240c49961c095505f3c044483a79ef1c32e413e19630af7508d67994f619",
+        "googletest/googletest/src/gtest-filepath.cc": "b3d0011edbb81f782b88aac6ea20d04b24050e5738b3b2240a22033f675cb71f",
+        "googletest/googletest/src/gtest-internal-inl.h": "78f0a388ae762649c892e517f3ca0fde01751bf44daf11ca9903d1773f618f58",
+        "googletest/googletest/src/gtest-matchers.cc": "09ea657c7bae257d42d5ed103a48570cfbf3068288db998b734838c1aa588de9",
+        "googletest/googletest/src/gtest-port.cc": "cd1ded969cc861946f5e8a7e33367e14dd3228cb29aa6f3ae68c1dff792b1ea1",
+        "googletest/googletest/src/gtest-printers.cc": "12908a4f1fff494821c920135da5af524fa2c816d74dca25deed38c1f02ffef1",
+        "googletest/googletest/src/gtest-test-part.cc": "9acddbbe251f0516a92da1f55d8edd06c66c8fdeca382460d57340ad594f76f2",
+        "googletest/googletest/src/gtest-typed-test.cc": "b92e70b2d7ee3b86328162cbda269a28de4ce67f0e8d9beec5ec2c73a93ba006",
+        "googletest/googletest/src/gtest.cc": "2ab4f150bce21851e645f90ef759a1d01d8bcd964513f5fa9f393232f7fe0116"
+      }
     }
   ]
 }

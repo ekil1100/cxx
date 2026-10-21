@@ -1,7 +1,9 @@
 /build/
 /.cxx/
+/compile_commands.json
 /.venv/
 /.ruff_cache/
+/.pytest_cache/
 __pycache__/
 *.pyc
 .DS_Store

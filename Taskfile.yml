@@ -32,16 +32,26 @@ tasks:
     cmds:
       - CXX_BOOTSTRAP_COMPILER={{.COMPILER | shellQuote}} ./build/cxx build {{.CLI_ARGS}}
 
+  compdb:
+    desc: Build targets and generate compile_commands.json for clangd
+    cmds:
+      - python3 scripts/compile_commands.py --compiler {{.COMPILER | shellQuote}}
+
   test:
     desc: Bootstrap, self-build, and run the complete test suite
     cmds:
       - python3 scripts/build.py --compiler {{.COMPILER | shellQuote}} --test {{.CLI_ARGS}}
 
+  e2e:
+    desc: Run pytest against an existing CXX build (pass -k, -m, or a test path after --)
+    cmds:
+      - python3 -m pytest --cxx={{.ROOT_DIR | shellQuote}}/build/cxx --compiler={{.COMPILER | shellQuote}} {{.CLI_ARGS}}
+
   unit:
     desc: Build and run the C++ unit tests
     cmds:
       - CXX_BOOTSTRAP_COMPILER={{.COMPILER | shellQuote}} ./build/cxx build support_test
-      - ./build/support_test
+      - CXX_BOOTSTRAP_COMPILER={{.COMPILER | shellQuote}} ./build/support_test
 
   bench:
     desc: Build CXX and record the incremental benchmark

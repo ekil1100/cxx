@@ -44,7 +44,7 @@ Compiler Adapter、DAG、Scheduler 和缓存均未参与。当前 M0 的 Modules
 
 ```sh
 python3 tests/prototypes/p04/run.py --compiler /opt/homebrew/opt/llvm@20/bin/clang++ --keep
-python3 tests/prototypes/p04/test_runner.py
+python3 -m pytest tests/prototypes/p04/test_runner.py
 ```
 
 省略 `--keep` 时，成功和失败运行的工作目录都会清理。保留时，全部输入、编译数据库、
@@ -135,7 +135,7 @@ Homebrew 编译器报告配置文件 `/opt/homebrew/etc/clang/arm64-apple-darwin
 `42 → 43 → 53 → 53`。摘要只在同一次运行内比较；不同目录或编译器的 BMI 字节相等性
 没有作为可移植性保证。
 
-补充验证命令：
+初次验证的历史命令如下；测试运行器现已改为 pytest，当前应执行 `python3 -m pytest tests/prototypes/p04/test_runner.py`，并先安装仓库 `requirements-test.txt`。真实工具链探针的命令保持不变。
 
 ```sh
 python3 tests/prototypes/p04/run.py --compiler /opt/homebrew/opt/llvm@21/bin/clang++ --keep

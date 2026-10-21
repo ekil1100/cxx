@@ -14,6 +14,7 @@
 #include <iterator>
 #include <string_view>
 #include <sys/file.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -77,7 +78,9 @@ bool is_current(const fs::path& output, const std::string& key) {
 }
 
 void publish(const fs::path& temporary, const fs::path& output, const std::string& key) {
-    if (!fs::is_regular_file(temporary)) throw Error("Action did not produce output: " + output.string());
+    if (!fs::is_regular_file(fs::symlink_status(temporary))) {
+        throw Error("Action did not produce a regular output file: " + output.string());
+    }
     const auto digest = hash_file(temporary);
     // Publish metadata first. Until the final rename, its output digest will not
     // match the old artifact, so an interrupted transaction is a safe cache miss.
@@ -497,6 +500,52 @@ int run_process(const std::vector<std::string>& args, const fs::path& cwd, bool 
     return WIFSIGNALED(status) ? 128 + WTERMSIG(status) : 1;
 }
 
+void validate_install_path(const fs::path& path, bool directory) {
+    fs::path current;
+    for (auto it = path.begin(); it != path.end(); ++it) {
+        current /= *it;
+        const auto status = fs::symlink_status(current);
+        const bool parent = std::next(it) != path.end() || directory;
+        if (fs::is_symlink(status)) throw Error("Install path contains a symlink: " + current.string());
+        if (fs::exists(status) && (parent ? !fs::is_directory(status) : !fs::is_regular_file(status)))
+            throw Error(std::string("Install path must be a ") + (parent ? "directory: " : "regular file: ") + current.string());
+    }
+}
+
+void install_file_atomic(const fs::path& source, const fs::path& destination) {
+    validate_install_path(destination);
+    auto identity = [&] {
+        struct stat status{};
+        if (::stat(source.c_str(), &status) != 0 || !S_ISREG(status.st_mode))
+            throw Error("Install source must be a regular file: " + source.string());
+        return fingerprint({fs::canonical(source).string(), std::to_string(status.st_dev),
+                            std::to_string(status.st_ino), std::to_string(status.st_mode),
+                            std::to_string(status.st_size), hash_file(source)});
+    };
+    const auto before = identity();
+    const auto permissions = fs::status(source).permissions();
+    const auto digest = hash_file(source);
+    if (fs::exists(destination) && fs::equivalent(source, destination))
+        throw Error("Install destination overlaps source: " + destination.string());
+    fs::create_directories(destination.parent_path());
+    validate_install_path(destination);
+    // A unique file in the destination directory keeps rename on one filesystem
+    // and avoids overwriting unrelated files with predictable staging names.
+    auto pattern = (destination.parent_path() / ".cxx-install-XXXXXX").string();
+    FileDescriptor staging{::mkstemp(pattern.data())};
+    if (staging.fd < 0) throw Error("Cannot stage install file: " + destination.string());
+    Temporary temp{pattern};
+    fs::copy_file(source, temp.path, fs::copy_options::overwrite_existing);
+    fs::permissions(temp.path, permissions);
+    if (identity() != before || hash_file(temp.path) != digest)
+        throw Error("Install source changed during copy; retry: " + source.string());
+    validate_install_path(destination);
+    if (fs::exists(destination) && fs::equivalent(source, destination))
+        throw Error("Install destination overlaps source: " + destination.string());
+    fs::rename(temp.path, destination);
+    std::cerr << "[install] " << destination.string() << '\n';
+}
+
 ProjectLock::ProjectLock(const fs::path& path) {
     fs::create_directories(path.parent_path());
     fd_ = open(path.c_str(), O_CREAT | O_RDWR | O_CLOEXEC, 0600);
@@ -508,24 +557,58 @@ ProjectLock::ProjectLock(const fs::path& path) {
 }
 ProjectLock::~ProjectLock() { if (fd_ >= 0) close(fd_); }
 
+void write_dependency_scan(const fs::path& path, const DependencyScan& scan) {
+    std::string contents(1, scan.complete ? '1' : '0');
+    for (const auto& input : scan.paths) {
+        contents += input.string();
+        contents += '\0';
+    }
+    write_atomic(path, contents);
+}
+
+DependencyScan read_dependency_scan(const fs::path& path) {
+    const auto contents = read_file(path);
+    if (contents.empty() || (contents.front() != '0' && contents.front() != '1'))
+        throw Error("Invalid bootstrap dependency scan: " + path.string());
+    DependencyScan scan;
+    scan.complete = contents.front() == '1';
+    for (std::size_t start = 1; start < contents.size();) {
+        const auto end = contents.find('\0', start);
+        if (end == std::string::npos || end == start)
+            throw Error("Invalid bootstrap dependency scan: " + path.string());
+        scan.paths.emplace_back(contents.substr(start, end - start));
+        start = end + 1;
+    }
+    return scan;
+}
+
 bool compile_cpp(const fs::path& compiler, const fs::path& source,
                  const fs::path& output, const std::vector<std::string>& flags,
                  const std::string& tool_identity, const fs::path& cwd,
-                 bool verbose, const std::string& label) {
+                 bool verbose, const std::string& label, DependencyScan* discovered_inputs) {
     fs::create_directories(output.parent_path());
     Temporary scan{output.string() + ".scan.ii"};
     Temporary depfile{output.string() + ".scan.d"};
     std::string lossy_path;
+    bool untracked = false;
     std::vector<std::string> preprocess{compiler.string()};
     preprocess.insert(preprocess.end(), flags.begin(), flags.end());
     preprocess.insert(preprocess.end(), {"-x", "c++", "-E", "-MD", "-MF", depfile.path.string(),
                                         "-MT", "cxxdeps", source.string(), "-o", scan.path.string()});
     auto scan_key = [&] {
         require_success(preprocess, cwd, verbose);
+        const auto preprocessed = read_file(scan.path);
         lossy_path = lossy_dependency_path(source, cwd, flags);
-        if (lossy_path.empty() && has_lossy_line_marker(read_file(scan.path))) {
+        if (lossy_path.empty() && has_lossy_line_marker(preprocessed)) {
             lossy_path = "line marker filename";
         }
+        untracked = has_untracked_assembly(preprocessed);
+        auto discover = [&](const fs::path& path) {
+            if (discovered_inputs && !std::ranges::contains(discovered_inputs->paths, path))
+                discovered_inputs->paths.push_back(path);
+        };
+        discover(cwd / source);
+        if (discovered_inputs && (!lossy_path.empty() || untracked)) discovered_inputs->complete = false;
         std::vector<std::string> fields{"cxx-m0-compile-v6", compiler.string(), source.string(),
                                         output.string(), cwd.string(), tool_identity,
                                         environment_fingerprint(), hash_file(scan.path),
@@ -537,12 +620,12 @@ bool compile_cpp(const fs::path& compiler, const fs::path& source,
         if (lossy_path.empty()) {
             for (const auto& path : dependency_paths(depfile.path, cwd)) {
                 fields.push_back(path.string()); fields.push_back(hash_file(path));
+                discover(path);
             }
         }
         return fingerprint(fields);
     };
     const auto key = scan_key();
-    const bool untracked = has_untracked_assembly(read_file(scan.path));
     if (lossy_path.empty() && !untracked && is_current(output, key)) return false;
     if (!lossy_path.empty() && verbose) {
         std::cerr << "[uncached] Lossy or ambiguous compiler dependency paths: " << lossy_path << '\n';
@@ -561,25 +644,30 @@ bool compile_cpp(const fs::path& compiler, const fs::path& source,
 
 bool file_action(const std::string& label, const std::vector<std::string>& args,
                  const std::vector<fs::path>& inputs, const fs::path& output,
-                 const std::string& tool_identity, const fs::path& cwd, bool verbose) {
-    std::vector<std::string> fields{"cxx-m0-file-action-v1", label, output.string(), cwd.string(),
-                                    tool_identity, environment_fingerprint()};
-    fields.insert(fields.end(), args.begin(), args.end());
-    for (const auto& input : inputs) { fields.push_back(input.string()); fields.push_back(hash_file(input)); }
-    const auto key = fingerprint(fields);
-    if (is_current(output, key)) return false;
+                 const std::string& tool_identity, const fs::path& cwd, bool verbose,
+                 bool cacheable) {
+    if (args.empty() || std::find(args.begin() + 1, args.end(), output.string()) == args.end()) {
+        throw Error("Action command must explicitly name its output as a standalone argument");
+    }
+    auto input_key = [&] {
+        std::vector<std::string> fields{"cxx-m1-file-action-v2", label, output.string(), cwd.string(),
+                                        tool_identity, environment_fingerprint()};
+        fields.insert(fields.end(), args.begin(), args.end());
+        for (const auto& input : inputs) { fields.push_back(input.string()); fields.push_back(hash_file(input)); }
+        return fingerprint(fields);
+    };
+    const auto key = input_key();
+    if (cacheable && is_current(output, key)) return false;
     fs::create_directories(output.parent_path());
     Temporary temp{temporary_for(output)};
     auto command = args;
-    if (!std::ranges::contains(command, output.string())) {
-        throw Error("Action command must explicitly name its output");
-    }
-    std::ranges::replace(command, output.string(), temp.path.string());
+    std::replace(command.begin() + 1, command.end(), output.string(), temp.path.string());
     // Archivers may update existing archives, so always start from an empty file set.
     std::error_code ec;
     fs::remove(temp.path, ec);
-    std::cerr << '[' << label << "] " << output.filename().string() << '\n';
+    std::cerr << '[' << label << "] " << (label == "custom" ? output.string() : output.filename().string()) << '\n';
     require_success(command, cwd, verbose);
+    if (input_key() != key) throw Error("Action inputs changed during the action; retry the build: " + output.string());
     publish(temp.path, output, key);
     return true;
 }

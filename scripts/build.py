@@ -3,6 +3,7 @@
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 import pathlib
@@ -34,6 +35,10 @@ def main():
         "--test", action="store_true", help="Run unit and integration tests"
     )
     args = parser.parse_args()
+    if args.test and importlib.util.find_spec("pytest") is None:
+        parser.error(
+            "pytest is required for --test; install requirements-test.txt in this Python environment"
+        )
     compiler = shutil.which(args.compiler)
     if not compiler:
         parser.error("Compiler not found: " + args.compiler)
@@ -90,33 +95,19 @@ def main():
         link_artifact(artifact, output / name)
     print("Self-hosted " + str(output / "cxx"), flush=True)
     if args.test:
-        subprocess.run([str(output / "support_test")], check=True)
-        for suite in ("self_host.py", "integration.py", "regressions.py"):
-            subprocess.run(
-                [
-                    sys.executable,
-                    str(ROOT / "tests" / suite),
-                    "--cxx",
-                    str(output / "cxx"),
-                    "--compiler",
-                    compiler,
-                ],
-                check=True,
-            )
-        subprocess.run(
-            [sys.executable, str(ROOT / "tests/tooling_test.py")], check=True
-        )
+        subprocess.run([str(output / "support_test")], env=environment, check=True)
         subprocess.run(
             [
                 sys.executable,
-                str(ROOT / "tests/prototypes/p02/run.py"),
-                "--compiler",
-                compiler,
+                "-m",
+                "pytest",
+                str(ROOT / "tests"),
+                "--cxx=" + str(output / "cxx"),
+                "--compiler=" + compiler,
+                "--junitxml",
+                str(output / "pytest-results.xml"),
             ],
-            check=True,
-        )
-        subprocess.run(
-            [sys.executable, str(ROOT / "tests/prototypes/p04/test_runner.py")],
+            cwd=ROOT,
             check=True,
         )
 

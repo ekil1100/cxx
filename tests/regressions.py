@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Focused execution regressions; run with --cxx /absolute/cxx [--compiler clang++]."""
 
-import argparse
 import errno
 import os
 import pathlib
@@ -15,6 +14,10 @@ import sys
 import tempfile
 import time
 import unittest
+
+import pytest
+
+pytestmark = pytest.mark.e2e
 
 CXX = None
 COMPILER = None
@@ -689,17 +692,3 @@ class Regressions(unittest.TestCase):
         for redirect in (False, True):
             with self.subTest(redirect=redirect):
                 self.tty("error", 1, redirect=redirect)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--cxx", required=True)
-    parser.add_argument("--compiler", default="clang++")
-    options, remaining = parser.parse_known_args()
-    # Do not resolve compiler symlinks: clang++'s invocation name selects C++ mode.
-    compiler = shutil.which(options.compiler)
-    if compiler is None:
-        parser.error("Compiler not found: " + options.compiler)
-    COMPILER = str(pathlib.Path(compiler).absolute())
-    CXX = str(pathlib.Path(options.cxx).absolute())
-    unittest.main(argv=[sys.argv[0], *remaining])

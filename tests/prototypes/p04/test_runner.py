@@ -9,6 +9,10 @@ import subprocess
 import sys
 import unittest
 
+import pytest
+
+pytestmark = pytest.mark.prototype
+
 ROOT = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location("p04_runner", ROOT / "run.py")
 runner = importlib.util.module_from_spec(spec)
@@ -86,7 +90,3 @@ class RunnerContract(unittest.TestCase):
                     result.stderr,
                 )
                 self.assertNotIn("PASS:", result.stdout)
-
-
-if __name__ == "__main__":
-    unittest.main(verbosity=2)

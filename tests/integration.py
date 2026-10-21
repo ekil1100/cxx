@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """End-to-end tests against real Clang, without CMake/Ninja as a build backend."""
 
-import argparse
 import hashlib
 import os
 import pathlib
@@ -11,6 +10,10 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+
+import pytest
+
+pytestmark = pytest.mark.e2e
 
 CONFIG = '[cxx]\nedition = "0"\n[cpp]\nversion = "17"\n[preset]\nname = "llvm"\nversion = "system"\n'
 CXX = None
@@ -579,16 +582,3 @@ int main() {
         with wrapper.open("a") as stream:
             stream.write("# Changed tool identity\n")
         self.assertEqual(self.counts(self.invoke("build"))[0], 1)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--cxx", required=True, type=pathlib.Path)
-    parser.add_argument("--compiler", default="clang++")
-    args, rest = parser.parse_known_args()
-    compiler = shutil.which(args.compiler)
-    if not compiler:
-        parser.error("Compiler not found: " + args.compiler)
-    COMPILER = str(pathlib.Path(compiler).absolute())
-    CXX = args.cxx.resolve()
-    unittest.main(argv=[__file__, *rest], verbosity=2)

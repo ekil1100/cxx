@@ -33,8 +33,33 @@ Options parse_options(int argc, char** argv) {
         options.arguments.emplace_back(argv[2]);
         return options;
     }
+    if (options.command == "test" || options.command == "install") {
+        bool filter = false, prefix = false;
+        for (int i = 2; i < argc; ++i) {
+            const std::string argument = argv[i];
+            if (argument == "-v") {
+                if (options.verbose) throw Error("Duplicate option: -v");
+                options.verbose = true;
+            } else if (argument == "--prefix" && options.command == "install") {
+                if (prefix) throw Error("Duplicate option: --prefix");
+                if (++i == argc || !argv[i][0] || argv[i][0] == '-')
+                    throw Error("install requires --prefix <nonempty directory>; use ./ for a name starting with '-'");
+                prefix = true;
+                options.arguments.push_back(argument);
+                options.arguments.emplace_back(argv[i]);
+                continue;
+            } else if (options.command == "test" && !argument.starts_with('-')) {
+                if (filter) throw Error("test accepts at most one filter");
+                filter = true;
+            } else throw Error("Unknown argument: " + argument);
+            options.arguments.push_back(argument);
+        }
+        if (options.command == "install" && !prefix)
+            throw Error("install requires an explicit --prefix <directory>");
+        return options;
+    }
     if (options.command != "build" && options.command != "run")
-        throw Error("Unknown command: " + options.command + "; M0 supports new, build and run");
+        throw Error("Unknown command: " + options.command + "; supported commands: new, build, run, test, install");
     bool program_arguments = false;
     unsigned targets = 0;
     for (int i = 2; i < argc; ++i) {
@@ -65,11 +90,17 @@ void print_help() {
   cxx new <directory>
   cxx build [targets...] [-v]
   cxx run [target] [-v] [-- args...]
+  cxx test [filter] [-v]
+  cxx install --prefix <directory> [-v]
   cxx --help
   cxx --version
 
 M0: Edition 0; user C++17/20/23/26; llvm preset, version omitted or "system".
 CXX and its Runtime require a C++23-capable host compiler.
+Tests use a literal name substring filter and run sequentially in the project root.
+Install is opt-in; relative prefixes are relative to the project root.
+Install uses separate relocatable artifacts and replaces files individually.
+No uninstall, manifest, multi-file rollback, or SDK package export is provided.
 Version fields are TOML strings; edition defaults to "0", cpp.version to "17".
 Tool priority: CXX_BOOTSTRAP_COMPILER / CXX_BOOTSTRAP_ARCHIVER (development
 only) > compiler.path / archiver.path > PATH clang++ / llvm-ar (fallback ar).
@@ -221,15 +252,17 @@ int bootstrap(const Options& options, const fs::path& invocation_directory) {
     const auto script = directory / "script.cpp";
     const auto script_object = directory / "script.o";
     const auto driver = directory / "driver";
+    const auto bootstrap_inputs = directory / "inputs";
+    DependencyScan dependencies;
     const std::vector<std::string> runtime_flags{
         "-std=c++23", "-I" + (sdk / "include").string(), "-I" + (sdk / "src").string(),
         "-I" + (sdk / "third_party/picosha2").string()};
     // compile_cpp scans and hashes the original TU and all included SDK headers
     // on every invocation. No launcher binary/version hash enters these keys.
     compile_cpp(compiler, sdk / "src/runtime.cpp", runtime_object, runtime_flags,
-                compiler_id, root, options.verbose, "runtime compile");
+                compiler_id, root, options.verbose, "runtime compile", &dependencies);
     compile_cpp(compiler, sdk / "src/support.cpp", support_object, runtime_flags,
-                compiler_id, root, options.verbose, "runtime compile");
+                compiler_id, root, options.verbose, "runtime compile", &dependencies);
     file_action("runtime archive",
                 {archiver.string(), "rcs", archive.string(), runtime_object.string(), support_object.string()},
                 {runtime_object, support_object}, archive,
@@ -239,15 +272,19 @@ int bootstrap(const Options& options, const fs::path& invocation_directory) {
         "\n\nint main(int argc, char** argv) {\n"
         "    return cxx::detail::driver_main(argc, argv, &build, cxx::Environment{" +
         quote_cpp(compiler.string()) + ", " + quote_cpp(archiver.string()) + ", " +
-        quote_cpp(config.standard) + ", " + quote_cpp(root.string()) + "});\n}\n";
+        quote_cpp(config.standard) + ", " + quote_cpp(root.string()) + "}, " +
+        quote_cpp(bootstrap_inputs.string()) + ");\n}\n";
     if (!fs::is_regular_file(script) || read_file(script) != contents) write_atomic(script, contents);
     const std::vector<std::string> script_flags{
         "-std=c++" + config.standard, "-I" + (sdk / "include").string(), "-I" + (sdk / "src").string()};
     compile_cpp(compiler, script, script_object, script_flags, compiler_id, root,
-                options.verbose, "driver compile");
+                options.verbose, "driver compile", &dependencies);
     file_action("driver link",
                 {compiler.string(), script_object.string(), archive.string(), "-o", driver.string()},
                 {script_object, archive}, driver, compiler_id, root, options.verbose);
+    // Pass the fresh scan independently of script.o/driver cache identity.
+    // A file avoids argv limits and preserves literal filename bytes.
+    write_dependency_scan(bootstrap_inputs, dependencies);
     std::vector<std::string> arguments{driver.string(), options.command};
     arguments.insert(arguments.end(), options.arguments.begin(), options.arguments.end());
     return run_process(arguments, root, options.verbose);

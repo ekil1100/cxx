@@ -4,7 +4,7 @@
 
 已实现 M0 的核心构建闭环和本地自举，并在 macOS arm64 / Apple Clang 21 上通过 C++ 单元测试、1 项自举测试、18 项集成测试、23 项定向回归和 9 项工具脚本测试。CXX Core/Runtime 已采用 C++23；公共 SDK、用户脚本和项目继续支持 C++17 起。当前可以创建项目、构建可执行程序和静态库、运行程序，并按内容进行本地增量构建。
 
-**M0 尚未正式退出**：Linux CI 的自举空构建修复仍待远端复验。P02 最小声明/Lock 原型已通过本机验证，P04 已完成本机扫描与显式构建链路；两项原型的跨平台证据仍待补齐。M1–M6 保持计划状态；本文不把设计中的 V1 能力计为已经实现。
+**M0 尚未正式退出**：Linux CI 的自举空构建修复仍待远端复验。P02 最小声明/Lock 原型已通过本机验证，P04 已完成本机扫描与显式构建链路；两项原型的跨平台证据仍待补齐。M1 已启动 SharedLibrary/ObjectLibrary 最小切片，进展见 [M1 状态](M1_STATUS.md)；M2–M6 保持计划状态。本文不把设计中的 V1 能力计为已经实现。
 
 ## 工作包进展
 
@@ -121,7 +121,7 @@ Linux 日志将崩溃定位到 `validate_graph` 的显式对象参数递归 lamb
 新增定向回归先失败后通过，覆盖三种字符串拼接形式；`.globl` 前缀后带 `.include` 或 `.incbin` 的用例继续禁用缓存，并验证外部文件修改会改变程序结果。自举测试现在在计数断言失败时输出详细构建日志。复现入口：
 
 ```sh
-python3 tests/regressions.py --cxx build/cxx Regressions.test_global_symbol_declaration_preserves_noop_build Regressions.test_global_symbol_prefix_keeps_assembler_inputs_uncached
+python3 -m pytest tests/regressions.py --cxx=build/cxx -k global_symbol
 python3 scripts/build.py --test
 ```
 
@@ -166,6 +166,6 @@ Build API 新增目标局部的 `optimization(Optimization)` 与 `warnings(bool)
 1. 推送 Linux LLVM 20 的自举空构建修复后，在远端复验完整测试和基准。
 2. 补齐 P02/P04 原型的 Linux CI 证据；依据原型限制评审阶段 Interface，正式包和 Lock 实现留待 M3。
 3. 将 P04 的生成前驱、模块扫描图和 BMI 身份结论用于后续 Adapter 设计；生产 Modules 能力留待 M5。
-4. M0 验收后进入 M1：平台进程、Shared/ObjectLibrary、生成文件、测试/安装与资源感知调度。
+4. 按用户要求并行推进 M1：Shared/ObjectLibrary 最小切片已交付本机验证，继续生成文件、测试/安装、平台进程与资源感知调度；M0 远端验收单独跟踪。
 
 所有产品层 OPEN 仍以[架构决策登记](../CXX_ARCHITECTURE_v1.0.md)为准；实验实现不自动将提案转为稳定承诺。

@@ -6,14 +6,15 @@ Build C++ with C++.
 
 CXX uses `build.cpp` to describe C++ targets and executes its own build graph. It aims to bring toolchains, dependencies, builds, and caches into one tool.
 
-**Current status: experimental M0 implementation.** The local build loop works with Clang on POSIX systems. macOS has passed local checks and the LLVM 20 CI job. The Linux Clang 18 CI job hit a compiler crash; its workflow now selects LLVM 20, with the rerun still pending. See [M0 status](docs/M0_STATUS.md) for the recorded run. The full V1 design is a roadmap, not a list of shipped features.
+**Current status: experimental M0 core with initial M1 libraries, generated actions, tests, and installation.** The local build loop works with Clang on Linux/macOS. Shared and object libraries have passed local macOS tests; native Linux validation of this slice remains pending. See [M0 status](docs/M0_STATUS.md) for prior CI evidence and [M1 status](docs/M1_STATUS.md) for current scope and verification. The full V1 design is a roadmap, not a list of shipped features.
 
 Available now:
 
-- `cxx new`, `cxx build`, and `cxx run`.
-- Executables and static libraries, including transitive static linking.
+- `cxx new`, `cxx build`, `cxx run`, registered `cxx test`, and explicit-prefix `cxx install`.
+- Executables, static libraries, shared libraries, and object libraries, including transitive linking and build-tree runtime lookup.
 - Source files, ordinary/system include directories, definitions, and private/public/interface usage requirements.
 - Per-target optimization and common compiler warnings.
+- Explicit generated sources/headers and single-output custom actions with opt-in local caching.
 - A C++17-or-newer Build Driver directly linked with a C++23 Runtime built by the selected compiler.
 - A target graph and an explicit, sequential compile/archive/link action graph.
 - Content-based local incremental builds, with header discovery on each invocation.
@@ -34,7 +35,7 @@ The implementation uses C++23 explicit object parameters for recursive lambdas, 
 
 A compiler release number (such as Apple Clang 21) is separate from the language standard. CXX passes `-std=c++23` explicitly instead of relying on the compiler's default mode.
 
-The source bootstrap does not need CMake, Ninja, root access, or a package-manager download. TOML parsing and SHA-256 use pinned, vendored libraries. `scripts/build.py` verifies their recorded checksums, compiles only a seed launcher directly, then uses that launcher to build the formal targets declared in this repository's `build.cpp`.
+The source bootstrap does not need CMake, Ninja, root access, or a package-manager download. TOML parsing and SHA-256 use pinned, vendored libraries. CXX's own C++ unit tests use pinned GoogleTest v1.18.0; it is built from vendored source and is not linked into the production launcher. `scripts/build.py` verifies their recorded checksums, compiles only a seed launcher directly, then uses that launcher to build the formal targets declared in this repository's `build.cpp`.
 
 ```sh
 git clone https://github.com/ekil1100/cxx.git
@@ -133,6 +134,88 @@ Use references for targets. The `Build` owns them and keeps their addresses stab
 
 `include`, `system_include`, `define`, and `link` default to `private_`. Static libraries retain their required transitive link dependencies even when their compile requirements are private.
 
+### Shared and object libraries
+
+```cpp
+#include <cxx/cxx.hpp>
+
+void build(cxx::Build& b) {
+    auto& objects = b.object_library("core_objects");
+    objects.source("src/core.cpp")
+           .include("include", cxx::Visibility::public_);
+
+    auto& library = b.shared_library("core");
+    library.link(objects, cxx::Visibility::public_);
+    b.executable("app").source("src/main.cpp").link(library);
+}
+```
+
+An object library only compiles its sources. A consuming executable, static library, or shared library uses those objects directly; such a consumer may omit its own sources. An object library itself must have at least one source. Nested object dependencies are deduplicated within an action. Explicit raw objects remain before static archives in executable/shared links, even when an archive contains the same objects, so constructor-only registration code still runs. Static archives retain normal demand-driven member extraction. Shared-library deduplication covers objects absorbed by the linked artifact itself; its private runtime dependencies have separate ownership. Public/interface objects remain in the exported link requirements until an actual shared provider replaces them. That provider and its public requirements survive subsequent shared-library relays. Each raw object carries its own unresolved libraries, so absorbing one object resolves only that object's private requirements. Independent public/interface library dependencies remain visible. Linking an object collection with separate private and interface edges has the same effect as a public edge. These rules also apply to partially absorbed collections and nested object libraries, while preserving downstream link order.
+
+A shared library resolves its private link dependencies without adding them as explicit library arguments to consumers. Public/interface requirements still propagate. All library sources compile with `-fPIC`, including static and object libraries, so their objects can be reused by shared libraries without separate variants.
+
+Linux shared libraries use `.so`, SONAME, and `$ORIGIN`-relative lookup. macOS uses `.dylib`, `@rpath` install names, and `@loader_path`-relative lookup. The complete `.cxx/build` tree can be moved together and executed without loader environment overrides; copying just the executable does not carry its shared dependencies. Explicit-prefix installation uses a separate `bin/` and `lib/` layout described below. Versioned libraries, Windows DLL/import libraries, and explicit export controls are future work.
+
+### Generated files and custom actions
+
+```cpp
+#include <cxx/cxx.hpp>
+
+void build(cxx::Build& b) {
+    auto& gen = b.custom_action("generate");
+    auto source = gen.output("generated.cpp");
+    gen.command({"python3", "generate.py", "schema.txt", source.path()})
+       .input("generate.py")
+       .input("schema.txt")
+       .cacheable();
+
+    b.executable("app").source("src/main.cpp").source(source);
+}
+```
+
+The generator must write to the output argument it receives. CXX substitutes a staging path and publishes the file after success and input verification. Each action declares one output filename, stored under `.cxx/generated/<action>/`. The output path must be a separate argument, not embedded in an option such as `--output=...`. Commands use argv directly; there is no implicit shell.
+
+Use `.input(other_generated_file)` to chain generators. For a generated header, add `.depends_on(header)` to each consuming target and supply its include directory with `.include(...)`. Generated handles bind consumers to their producers even before files exist. They belong to their `Build` and remain valid during its lifetime.
+
+Actions run on every build by default. `.cacheable()` opts into local content-based reuse and asserts that all relevant file inputs are declared. The executable, arguments, inherited environment, declared inputs, and generated predecessor identities are tracked; interpreter scripts and additional data must be listed with `.input()`. Tools that read undeclared files, time, or the network should remain uncached. This is a trusted-tool contract, not a sandbox.
+
+A default `build` executes all custom actions; selecting a target runs only its required generator closure. A project containing only custom actions supports the default `build`. Standalone action-name selection, multi-output transactions, and build-produced generator tools are future work. Failed commands, missing outputs, and detected input changes preserve prior outputs when tools honor the supplied staging path.
+
+### Tests and installation
+
+Declare tests and install entries in `build()`:
+
+```cpp
+#include <cxx/cxx.hpp>
+
+void build(cxx::Build& b) {
+    auto& tests = b.executable("unit_tests").source("tests/main.cpp");
+    b.test("unit", tests);
+    b.test("unit_verbose", tests, {"--verbose"});
+
+    auto& library = b.shared_library("greet").source("src/greet.cpp");
+    auto& app = b.executable("hello").source("src/main.cpp").link(library);
+    b.install(app);
+    b.install_file("include/greet.hpp", "include/greet/greet.hpp");
+}
+```
+
+```sh
+cxx test
+cxx test verbose -v
+cxx install --prefix ./stage
+```
+
+`test` builds only the selected registered tests and their dependencies, then runs them sequentially from the project root. The optional filter is a literal, case-sensitive substring of the test name. Tests run on every invocation, even when compilation is up to date. The first failing test stops execution and its exit code is propagated. No registrations or no matching tests is an error. Arguments are passed directly, without shell expansion; test names must be unique ignoring ASCII case. Test timeouts, parallel execution, and keep-going are future work.
+
+`install` requires an explicit prefix. Relative prefixes are resolved from the project root, including when invoked from a subdirectory. Executables go to `bin/`; shared and explicitly installed static libraries go to `lib/`. Required runtime shared libraries are included automatically, including private transitive dependencies. Object libraries cannot be installed directly. `install_file()` takes the complete prefix-relative destination filename; it also accepts a `GeneratedFile` handle for generated headers or data.
+
+Install-layout executables and shared libraries are linked separately under `.cxx/install/bin` and `.cxx/install/lib`, reusing ordinary object files. They use relative runtime lookup, so the complete installation prefix can be moved and run without the original build tree or loader environment overrides. Normal `.cxx/build` executables retain their build-tree layout. CXX's own launcher still requires its source SDK; this is project artifact installation, not a standalone CXX SDK packaging system.
+
+Every installation checks and copies its destinations again, so deleted or modified installed files are repaired even after a no-op build. Copies preserve source executable permissions and use per-file staging and atomic replacement. Destination collisions, traversal, symlink path components, and overlap with tracked source/build inputs are rejected. Protected inputs include transitive Build Driver headers and headers discovered by project compilation, including cache hits. CXX checks the complete destination set before its first installation write. Lossy dependency paths or untracked assembly inputs make the scan incomplete: ordinary builds still work, while installation is rejected before any destination is published. Unrelated destination files are retained. On macOS, use a real directory path such as `/private/tmp/stage` instead of a symlinked `/tmp` path. The current scope excludes multi-file rollback, uninstall, installation manifests, and concurrent installers targeting the same prefix. A failure after some files are published may leave a partially updated prefix.
+
+### Target compilation settings
+
 Target compilation settings can be declared explicitly:
 
 ```cpp
@@ -156,7 +239,7 @@ Outputs are stored under:
 ```text
 .cxx/driver/                  # Runtime archive and generated Build Driver
 .cxx/state/build.lock         # Local process lock; not a resolution cxx.lock
-.cxx/build/<target>/          # Executable or static archive
+.cxx/build/<target>/          # Executable, static archive, or shared library
 .cxx/build/<target>/.objects/ # Object files and local fingerprints
 ```
 
@@ -183,20 +266,25 @@ M0 limits:
 
 See [Contributing to CXX](CONTRIBUTING.md) for environment setup, the self-hosting workflow, code conventions, and pull request checks.
 
-Optional [Task v3](https://taskfile.dev/docs/installation) shortcuts are available in `Taskfile.yml`: `task bootstrap` for the first build, `task build` for daily builds, `task unit` for C++ unit tests, `task test` for full verification, and `task bench` for the benchmark. Run `task` to list tasks. Task only wraps the existing commands; it does not define another build graph.
+Optional [Task v3](https://taskfile.dev/docs/installation) shortcuts are available in `Taskfile.yml`: `task bootstrap` for the first build, `task build` for daily builds, `task unit` for C++ unit tests, `task test` for full verification, `task e2e -- -k <expression>` for selected pytest checks, and `task bench` for the benchmark. Run `task` to list tasks. Task only wraps the existing commands; it does not define another build graph.
+
+Install the pinned Python test runner in your development environment (see [environment setup](CONTRIBUTING.md)) before full verification. Plain bootstrap/build commands do not require pytest.
 
 ```sh
+uv pip install -r requirements-test.txt
 python3 scripts/build.py --test
-python3 tests/self_host.py --cxx build/cxx
-python3 tests/integration.py --cxx build/cxx
-python3 tests/regressions.py --cxx build/cxx
-python3 tests/tooling_test.py
+# Focused checks against an existing build; not required after the full suite:
+python3 -m pytest tests/integration.py --cxx=build/cxx
+python3 -m pytest -m e2e -k noop
+python3 -m pytest -m tooling
 python3 scripts/benchmark.py --cxx build/cxx --output build/benchmark.json
 ```
 
+`--test` runs GoogleTest and one pytest session covering all Python suites, including P02 and P04 runner checks. It writes `build/pytest-results.xml` (or under `--output`). Use `--compiler=/path/to/clang++` to select the compiler for direct pytest runs. Always use `--cxx=PATH` and `--compiler=PATH` for pytest so path values are not treated as discovery paths; `--collect-only` lists tests without building. Existing Python cases retain their `unittest.TestCase` assertions and lifecycle, but pytest owns collection, configuration, and reports. The real P04 Modules compiler probe remains a separate command.
+
 ### Self-hosting
 
-The root `cxxrc.toml` selects C++23. The root `build.cpp` declares `cxx_support`, `cxx`, and `support_test`; the public SDK remains C++17-compatible. Once a launcher exists, use it directly for development:
+The root `cxxrc.toml` selects C++23. The root `build.cpp` declares `cxx_support`, `cxx`, `gtest`, and `support_test`; the public SDK remains C++17-compatible. Once a launcher exists, use it directly for development:
 
 ```sh
 ./build/cxx build

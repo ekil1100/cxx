@@ -14,17 +14,17 @@
 
 ## 安装与运行
 
-前置条件：Python 3.14+、Linux/macOS、支持仓库所用 C++23 功能的 Clang 和标准库。使用仓库已有 `toml++`、`PicoSHA2`；运行器校验现有第三方清单，无需下载或安装 Python 包。
+前置条件：Python 3.14+、Linux/macOS、支持仓库所用 C++23 功能的 Clang 和标准库。使用仓库已有 `toml++`、`PicoSHA2`；运行器校验现有第三方清单；Python 测试依赖通过仓库的 `requirements-test.txt` 安装。
 
 在仓库根目录执行：
 
 ```sh
-python3 tests/prototypes/p02/run.py --compiler /path/to/clang++
+python3 -m pytest tests/prototypes/p02/run.py --compiler=/path/to/clang++
 ```
 
 编译器选择顺序为：显式 `--compiler`、环境变量 `CXX_BOOTSTRAP_COMPILER`、`clang++`。运行器沿用现有测试的编译器定位约定，使用 `shutil.which()` 和 `Path.absolute()`，保留符号链接与 `..` 的路径语义。同一编译器用于声明、内部实现、现有支持代码和最终链接。
 
-运行器打印平台、Python、编译器版本、完整编译和测试命令。每次运行创建独立临时目录，包含带空格的路径；结束后清理二进制、锁、候选文件及守卫文件。测试有超时，检查点通过管道握手，进程清理覆盖失败分支。测试无需预先构建 `build/cxx`，也无需修改正式构建图。
+运行器打印平台、Python、编译器版本、完整编译和测试命令。每次运行创建独立临时目录，包含带空格的路径；二进制、锁、候选文件及守卫文件放在 pytest 管理的临时目录中，保留策略由 pytest 控制。测试有超时，检查点通过管道握手，进程清理覆盖失败分支。测试无需预先构建 `build/cxx`，也无需修改正式构建图。
 
 ### 配置
 
@@ -83,7 +83,7 @@ python3 tests/prototypes/p02/run.py --compiler /path/to/clang++
 | `/usr/bin/clang++` | Apple Clang `21.0.0 (clang-2100.3.34.2)`，目标 `arm64-apple-darwin27.0.0` | 8 项测试通过 |
 | `/opt/homebrew/opt/llvm@20/bin/clang++` | Homebrew Clang `20.1.8`，目标 `arm64-apple-darwin27.0.0` | 8 项测试通过 |
 
-实际执行命令：
+以下为原型初次验证时的历史命令；独立脚本测试入口现已移除，当前复现请使用上节 pytest 命令：
 
 ```sh
 CXX_BOOTSTRAP_COMPILER=/usr/bin/clang++ python3 tests/prototypes/p02/run.py

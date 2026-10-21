@@ -34,6 +34,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version-file: .python-version
+      - name: Install Python test dependencies
+        run: python3 -m pip install -r requirements-test.txt
       - name: Install and select LLVM 20 on Linux
         if: runner.os == 'Linux'
         shell: bash
@@ -62,6 +64,13 @@ jobs:
           "$CXX_COMPILER" --version
       - name: Bootstrap, self-build and test with the selected Clang
         run: python3 scripts/build.py --compiler "$CXX_COMPILER" --test
+      - name: Upload pytest report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-${{ matrix.os }}
+          path: build/pytest-results.xml
+          if-no-files-found: ignore
       - name: Validate the explicit Modules prototype
         run: python3 tests/prototypes/p04/run.py --compiler "$CXX_COMPILER" --scanner "$(command -v clang-scan-deps)"
       - name: Record incremental baseline

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Build CXX with CXX, then rebuild and exercise the resulting launcher."""
 
-import argparse
 import os
 import pathlib
 import re
@@ -12,7 +11,13 @@ import subprocess
 import tempfile
 import unittest
 
+import pytest
+
+pytestmark = pytest.mark.e2e
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+CXX = None
+COMPILER = None
 
 
 class SelfHost(unittest.TestCase):
@@ -55,7 +60,7 @@ class SelfHost(unittest.TestCase):
                     result.stdout + result.stderr,
                 )
 
-            check_counts(invoke(CXX, "build"), (4, 1, 2))
+            check_counts(invoke(CXX, "build"), (5, 2, 2))
             artifact = root / ".cxx/build/cxx/cxx"
             (root / "build").mkdir()
             current = root / "build/cxx"
@@ -70,7 +75,7 @@ class SelfHost(unittest.TestCase):
             # a real self-rebuild rather than merely a cache lookup.
             env.pop("CXX_SDK_ROOT")
             rebuilt = invoke(current, "build", "-v")
-            check_counts(rebuilt, (4, 1, 2))
+            check_counts(rebuilt, (5, 2, 2))
             commands = [
                 shlex.split(line[len("[command] ") :])
                 for line in rebuilt.stderr.splitlines()
@@ -81,7 +86,23 @@ class SelfHost(unittest.TestCase):
                 for cmd in commands
                 if "-c" in cmd and ".cxx/build/" in cmd[cmd.index("-o") + 1]
             ]
-            self.assertEqual(len(target_compiles), 4)
+            self.assertEqual(len(target_compiles), 5)
+            gtest_compiles = [
+                cmd
+                for cmd in target_compiles
+                if cmd[cmd.index("-c") + 1].endswith("/gtest-all.cc")
+            ]
+            self.assertEqual(len(gtest_compiles), 1)
+            # Compare paths in the same command-log encoding (UTF-8 is escaped).
+            gtest_command = gtest_compiles[0]
+            gtest_root = gtest_command[gtest_command.index("-c") + 1].removesuffix(
+                "/src/gtest-all.cc"
+            )
+            self.assertIn("-I" + gtest_root, gtest_command)
+            self.assertEqual(
+                gtest_command[gtest_command.index("-isystem") + 1],
+                gtest_root + "/include",
+            )
             for command in target_compiles:
                 for flag in (
                     "-std=c++23",
@@ -116,16 +137,3 @@ class SelfHost(unittest.TestCase):
                 invoke(current, "--self-host-probe").stdout, "self-host-probe\n"
             )
             check_counts(invoke(current, "build"), (0, 0, 0))
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--cxx", required=True, type=pathlib.Path)
-    parser.add_argument("--compiler", default="clang++")
-    args, rest = parser.parse_known_args()
-    compiler = shutil.which(args.compiler)
-    if not compiler:
-        parser.error("Compiler not found: " + args.compiler)
-    COMPILER = str(pathlib.Path(compiler).absolute())
-    CXX = args.cxx.resolve()
-    unittest.main(argv=[__file__, *rest], verbosity=2)
