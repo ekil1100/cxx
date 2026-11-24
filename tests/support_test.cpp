@@ -134,6 +134,86 @@ int spawn_worker(const std::string& executable, int iterations) {
     return child_nonzero || parent_errors ? 1 : 0;
 }
 
+TEST_F(SupportTest, ResponseFilesRoundTripRealToolsAndCache) {
+    const auto compiler = test_compiler();
+    const auto identity = hash_file(compiler);
+    const auto directory = root / "space 'quote\" slash\\ unicode-é";
+    fs::create_directories(directory);
+    const auto source = directory / "main.cpp";
+    const auto object = directory / "main.o";
+    const auto archive = directory / "library.a";
+    const auto executable = directory / "app";
+    write_atomic(source, "constexpr char value[] = VALUE;\n"
+                         "static_assert(sizeof(value) == 6);\n"
+                         "static_assert(value[1] == '\\\\' && value[2] == '\"');\n"
+                         "int main() { return 0; }\n");
+    std::vector<std::string> flags{"-std=c++17", "-DVALUE=\"a\\\\\\\" b\""};
+    // Exceeds macOS's usual total argv limit and Linux's single-argument limit.
+    flags.push_back("-DUNUSED=" + std::string(300000, 'x'));
+    EXPECT_TRUE(compile_cpp(compiler, source, object, flags, identity, root, false));
+    // Backslash paths conservatively bypass compile reuse, as before.
+    const auto plain_source = root / "plain.cpp";
+    const auto plain_object = root / "plain.o";
+    write_atomic(plain_source, "int other() { return 1; }\n");
+    EXPECT_TRUE(compile_cpp(compiler, plain_source, plain_object, flags, identity, root, false));
+    EXPECT_FALSE(compile_cpp(compiler, plain_source, plain_object, flags, identity, root, false));
+
+    const auto member = directory / "member.o";
+    fs::copy_file(plain_object, member);
+    const char* selected_ar = std::getenv("CXX_BOOTSTRAP_ARCHIVER");
+    const auto archiver = resolve_program(selected_ar ? selected_ar : "llvm-ar");
+    std::vector<std::string> archive_args{archiver.string(), "rcs", archive.string()};
+    for (int i = 0; i < 4000; ++i) archive_args.push_back(member.string());
+    EXPECT_TRUE(file_action("archive", archive_args, {member}, archive,
+                            hash_file(archiver), root, false, true, CommandFormat::llvm_response));
+    EXPECT_FALSE(file_action("archive", archive_args, {member}, archive,
+                             hash_file(archiver), root, false, true, CommandFormat::llvm_response));
+    std::vector<std::string> link{compiler.string(), object.string(), archive.string(), "-o", executable.string()};
+    for (int i = 0; i < 4000; ++i) link.push_back("-L" + directory.string());
+    EXPECT_TRUE(file_action("link", link, {object, archive}, executable,
+                            identity, root, false, true, CommandFormat::llvm_response));
+    EXPECT_FALSE(file_action("link", link, {object, archive}, executable,
+                             identity, root, false));
+    EXPECT_EQ(run_process({executable.string()}, root), 0);
+    for (const auto& entry : fs::directory_iterator(root))
+        EXPECT_FALSE(entry.path().filename().string().starts_with(".cxx-response-"));
+}
+
+TEST_F(SupportTest, ResponseFileLifetimeAndExpandedVerboseCommand) {
+    const auto tool = root / "inspect.sh";
+    write_atomic(tool, "#!/bin/sh\ncase \"$1\" in @*) ;; *) exit 91;; esac\n"
+                       "test -f \"${1#@}\" || exit 92\n"
+                       "cp \"${1#@}\" captured\nexit 23\n");
+    fs::permissions(tool, fs::perms::owner_exec, fs::perm_options::add);
+    const std::vector<std::string> args{tool.string(), "", "space ' \" \\ \t\n é", std::string(20000, 'x')};
+    testing::internal::CaptureStderr();
+    const auto code = run_llvm_process(args, root, true);
+    const auto log = testing::internal::GetCapturedStderr();
+    EXPECT_EQ(code, 23);
+    std::string expected = "[command]";
+    for (const auto& arg : args) expected += " " + quote_cpp(arg);
+    EXPECT_EQ(log, expected + "\n");
+    EXPECT_TRUE(read_file(root / "captured").starts_with("\"\"\n"));
+    for (const auto& entry : fs::directory_iterator(root))
+        EXPECT_FALSE(entry.path().filename().string().starts_with(".cxx-response-"));
+    auto missing = args;
+    missing[0] = (root / "missing-tool").string();
+    EXPECT_EQ(run_llvm_process(missing, root), 127);
+    for (const auto& entry : fs::directory_iterator(root))
+        EXPECT_FALSE(entry.path().filename().string().starts_with(".cxx-response-"));
+}
+
+TEST_F(SupportTest, LongCustomActionKeepsLiteralArguments) {
+    const auto tool = root / "custom.sh";
+    const auto output = root / "output";
+    write_atomic(tool, "#!/bin/sh\ntest \"$2\" = '@literal' || exit 90\n"
+                       "test \"${#3}\" = 20000 || exit 91\nprintf ok > \"$1\"\n");
+    fs::permissions(tool, fs::perms::owner_exec, fs::perm_options::add);
+    EXPECT_TRUE(file_action("custom", {tool.string(), output.string(), "@literal", std::string(20000, 'x')},
+                            {}, output, hash_file(tool), root, false));
+    EXPECT_EQ(read_file(output), "ok");
+}
+
 TEST_F(SupportTest, AtomicReadWrite) {
     const auto input = root / "input with space";
     write_atomic(input, "abc");

@@ -266,7 +266,7 @@ int bootstrap(const Options& options, const fs::path& invocation_directory) {
     file_action("runtime archive",
                 {archiver.string(), "rcs", archive.string(), runtime_object.string(), support_object.string()},
                 {runtime_object, support_object}, archive,
-                fingerprint({compiler_id, archiver_id}), root, options.verbose);
+                fingerprint({compiler_id, archiver_id}), root, options.verbose, true, CommandFormat::llvm_response);
     const std::string contents =
         "#include \"runtime.hpp\"\n#include \"../../build.cpp\""
         "\n\nint main(int argc, char** argv) {\n"
@@ -281,7 +281,7 @@ int bootstrap(const Options& options, const fs::path& invocation_directory) {
                 options.verbose, "driver compile", &dependencies);
     file_action("driver link",
                 {compiler.string(), script_object.string(), archive.string(), "-o", driver.string()},
-                {script_object, archive}, driver, compiler_id, root, options.verbose);
+                {script_object, archive}, driver, compiler_id, root, options.verbose, true, CommandFormat::llvm_response);
     // Pass the fresh scan independently of script.o/driver cache identity.
     // A file avoids argv limits and preserves literal filename bytes.
     write_dependency_scan(bootstrap_inputs, dependencies);

@@ -255,8 +255,10 @@ bool has_untracked_assembly(const std::string& text) {
     return false;
 }
 
-void require_success(const std::vector<std::string>& args, const fs::path& cwd, bool verbose) {
-    const auto code = run_process(args, cwd, verbose);
+void require_success(const std::vector<std::string>& args, const fs::path& cwd, bool verbose,
+                     CommandFormat format) {
+    const auto code = format == CommandFormat::llvm_response
+        ? run_llvm_process(args, cwd, verbose) : run_process(args, cwd, verbose);
     if (code != 0) throw Error("Command failed (exit " + std::to_string(code) + "): " + args.front());
 }
 }
@@ -351,6 +353,45 @@ std::string quote_cpp(const std::string& value) {
         } else result += static_cast<char>(c);
     }
     return result + '"';
+}
+
+int run_llvm_process(const std::vector<std::string>& args, const fs::path& cwd, bool verbose) {
+    // Leave ample room below normal POSIX exec limits, including argv pointers.
+    std::size_t size = 0;
+    for (const auto& arg : args) size += arg.size() + 1 + sizeof(char*);
+    if (size <= 16 * 1024) return run_process(args, cwd, verbose);
+
+    // LLVM's GNU tokenizer accepts double-quoted arguments and backslash escapes.
+    // quote_cpp is for diagnostics only: octal escapes would change argument bytes.
+    std::string contents;
+    for (std::size_t i = 1; i < args.size(); ++i) {
+        contents += '"';
+        for (char c : args[i]) {
+            if (c == '\\' || c == '"') contents += '\\';
+            contents += c;
+        }
+        contents += "\"\n";
+    }
+    auto name = (fs::absolute(cwd) / ".cxx-response-XXXXXX").string();
+    const int fd = mkstemp(name.data());
+    if (fd < 0) throw Error("Cannot create response file: " + std::string(std::strerror(errno)));
+    Temporary response{name};
+    {
+        FileDescriptor descriptor{fd};
+        std::size_t offset = 0;
+        while (offset < contents.size()) {
+            const auto count = write(fd, contents.data() + offset, contents.size() - offset);
+            if (count < 0 && errno == EINTR) continue;
+            if (count <= 0) throw Error("Cannot write response file: " + name);
+            offset += static_cast<std::size_t>(count);
+        }
+    }
+    if (verbose) {
+        std::cerr << "[command]";
+        for (const auto& arg : args) std::cerr << ' ' << quote_cpp(arg);
+        std::cerr << '\n';
+    }
+    return run_process({args.front(), "@" + name}, cwd, false);
 }
 
 int run_process(const std::vector<std::string>& args, const fs::path& cwd, bool verbose) {
@@ -596,7 +637,7 @@ bool compile_cpp(const fs::path& compiler, const fs::path& source,
     preprocess.insert(preprocess.end(), {"-x", "c++", "-E", "-MD", "-MF", depfile.path.string(),
                                         "-MT", "cxxdeps", source.string(), "-o", scan.path.string()});
     auto scan_key = [&] {
-        require_success(preprocess, cwd, verbose);
+        require_success(preprocess, cwd, verbose, CommandFormat::llvm_response);
         const auto preprocessed = read_file(scan.path);
         lossy_path = lossy_dependency_path(source, cwd, flags);
         if (lossy_path.empty() && has_lossy_line_marker(preprocessed)) {
@@ -636,7 +677,7 @@ bool compile_cpp(const fs::path& compiler, const fs::path& source,
     std::vector<std::string> compile{compiler.string()};
     compile.insert(compile.end(), flags.begin(), flags.end());
     compile.insert(compile.end(), {"-x", "c++", "-c", source.string(), "-o", temp.path.string()});
-    require_success(compile, cwd, verbose);
+    require_success(compile, cwd, verbose, CommandFormat::llvm_response);
     if (scan_key() != key) throw Error("Compilation inputs changed during the action; retry the build: " + source.string());
     publish(temp.path, output, key);
     return true;
@@ -645,7 +686,7 @@ bool compile_cpp(const fs::path& compiler, const fs::path& source,
 bool file_action(const std::string& label, const std::vector<std::string>& args,
                  const std::vector<fs::path>& inputs, const fs::path& output,
                  const std::string& tool_identity, const fs::path& cwd, bool verbose,
-                 bool cacheable) {
+                 bool cacheable, CommandFormat format) {
     if (args.empty() || std::find(args.begin() + 1, args.end(), output.string()) == args.end()) {
         throw Error("Action command must explicitly name its output as a standalone argument");
     }
@@ -666,7 +707,7 @@ bool file_action(const std::string& label, const std::vector<std::string>& args,
     std::error_code ec;
     fs::remove(temp.path, ec);
     std::cerr << '[' << label << "] " << (label == "custom" ? output.string() : output.filename().string()) << '\n';
-    require_success(command, cwd, verbose);
+    require_success(command, cwd, verbose, format);
     if (input_key() != key) throw Error("Action inputs changed during the action; retry the build: " + output.string());
     publish(temp.path, output, key);
     return true;

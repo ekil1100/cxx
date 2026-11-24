@@ -6,7 +6,7 @@ Build C++ with C++.
 
 CXX uses `build.cpp` to describe C++ targets and executes its own build graph. It aims to bring toolchains, dependencies, builds, and caches into one tool.
 
-**Current status: experimental M0 core with initial M1 libraries, generated actions, tests, and installation.** The local build loop works with Clang on Linux/macOS. Shared and object libraries have passed local macOS tests; native Linux validation of this slice remains pending. See [M0 status](docs/M0_STATUS.md) for prior CI evidence and [M1 status](docs/M1_STATUS.md) for current scope and verification. The full V1 design is a roadmap, not a list of shipped features.
+**Current status: experimental M0 core with initial M1 libraries, generated actions, tests, installation, and long-command response files.** The M1 library, generated-action, and test/install slice passed native Linux and macOS CI at commit `084666f`. Response-file support has been validated locally on macOS; its Linux CI validation remains pending. See [M0 status](docs/M0_STATUS.md) for prior CI evidence and [M1 status](docs/M1_STATUS.md) for current scope and verification. The full V1 design is a roadmap, not a list of shipped features.
 
 Available now:
 
@@ -28,7 +28,7 @@ Package management, toolchain downloads, `cxx.lock`, shared/remote caches, Modul
 
 - Linux or macOS.
 - Clang with the C++23 support needed to build CXX and its Runtime, plus the platform C++ standard library/SDK. User scripts and targets can still use C++17.
-- `llvm-ar` or `ar`.
+- `llvm-ar` or `ar`. Long archive commands need LLVM-compatible `@file` support; the response-file tests use `llvm-ar` (or `CXX_BOOTSTRAP_ARCHIVER`).
 - Python 3.14 or later for the seed build and tests. The repository pins Python 3.14 in `.python-version`; ensure `python3 --version` reports 3.14 or later.
 
 The implementation uses C++23 explicit object parameters for recursive lambdas, `std::ranges::contains`, and `std::string::contains`. The host compiler and standard library must support these features. Internal headers check the required library feature macros; compiling the Runtime verifies the language syntax. These requirements do not apply to the C++17 public SDK headers.
@@ -250,6 +250,21 @@ This catches newly shadowing headers, `__has_include` changes, and content chang
 Clang's depfiles can rewrite literal backslashes or split control characters in POSIX file paths. CXX checks source/search paths and actual preprocessor line markers, including direct, macro, and transitive includes. Actions with lossy or ambiguous dependency paths bypass incremental reuse and compile the original source each time; `-v` explains why. CXX hashes the primary source directly and avoids trusting lossy header names. Ordinary spaces, quotes, and Unicode paths retain incremental reuse. Archive/link actions can still reuse unchanged object content.
 
 Output content is checked before reuse. Failed compiler, linker, or metadata-publication operations preserve the previous valid artifact. A project lock rejects a second simultaneous build. Commands use argument arrays rather than shell interpolation.
+
+Long native dependency-scan, compile, link, and archive commands (over 16 KiB,
+including argument-pointer overhead) use temporary response files with LLVM's
+POSIX GNU-style quoting. Long archive commands require `llvm-ar` or an explicitly
+selected archiver supporting the same `@file` syntax; the platform `ar` fallback
+is only suitable when it supports that syntax or commands stay below the threshold.
+Use `CXX_BOOTSTRAP_ARCHIVER` or `[archiver].path` to select `llvm-ar` when needed.
+Custom actions, tests, and launched programs keep their direct argument arrays.
+Cache keys retain the original arguments, and `-v` prints expanded arguments so
+compilation-database generation remains usable. Response files are private,
+uniquely named files in the command's working directory and are removed after
+success, failure, or handled interruption. A forced kill or host crash can leave
+`.cxx-response-*` files, which may be removed when no build is running. This
+behavior covers the native launcher and Runtime, not Python's seed compilation,
+and does not add Windows support.
 
 M0 limits:
 

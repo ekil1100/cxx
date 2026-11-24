@@ -30,7 +30,11 @@ std::string fingerprint(const std::vector<std::string>& fields);
 std::string environment_fingerprint();
 fs::path resolve_program(const std::string& name);
 std::string quote_cpp(const std::string& value);
+enum class CommandFormat { argv, llvm_response };
+
 int run_process(const std::vector<std::string>& args, const fs::path& cwd, bool verbose = false);
+// LLVM GNU-style response quoting on POSIX; verbose output retains expanded argv.
+int run_llvm_process(const std::vector<std::string>& args, const fs::path& cwd, bool verbose = false);
 
 // Install paths reject symlinks at every existing component. Check the entire
 // plan before writing, then recheck each destination when publishing a file.
@@ -75,5 +79,5 @@ bool compile_cpp(const fs::path& compiler, const fs::path& source,
 bool file_action(const std::string& label, const std::vector<std::string>& args,
                  const std::vector<fs::path>& inputs, const fs::path& output,
                  const std::string& tool_identity, const fs::path& cwd, bool verbose,
-                 bool cacheable = true);
+                 bool cacheable = true, CommandFormat format = CommandFormat::argv);
 } // namespace cxx::detail

@@ -2,9 +2,21 @@
 
 ## 结论
 
-已开始 M1.2，交付 SharedLibrary/ObjectLibrary、生成文件与单输出 Custom Action，以及测试/显式前缀安装的最小闭环。公共 Build API 保持 C++17，Core/Runtime 使用 C++23。本机 macOS arm64 / Apple Clang 21 的 43 项 GoogleTest C++ 单元测试及 119 项 pytest 测试通过，其中 22 项覆盖库语义，11 项覆盖生成动作，17 项覆盖测试与安装。完整验证已覆盖链接来源修复；Linux 原生验证仍待执行。
+已开始 M1.2，交付 SharedLibrary/ObjectLibrary、生成文件与单输出 Custom Action，以及测试/显式前缀安装的最小闭环。公共 Build API 保持 C++17，Core/Runtime 使用 C++23。本机 macOS arm64 / Apple Clang 21 的 43 项 GoogleTest C++ 单元测试及 119 项 pytest 测试通过，其中 22 项覆盖库语义，11 项覆盖生成动作，17 项覆盖测试与安装。完整验证已覆盖链接来源修复；提交 `084666f` 的 Linux 与 macOS 原生 CI 也已通过，各 43 项 C++ 测试及 119 项 pytest 测试通过。
 
-M1 尚未完成。Linux 原生加载器执行及新测试的远端结果待验证；Windows、多输出 Custom Action、安装事务/卸载、并行调度及其他工作包保持待实现。本轮按用户要求与 M0 的 CI 验收并行推进，不将本机通过计作远端验收。
+M1 尚未完成。Windows、多输出 Custom Action、安装事务/卸载、并行调度及其他工作包保持待实现。本轮新增 M1.1 长命令响应文件支持，已完成本机 macOS 验证。
+
+### 远端验收记录
+
+[CI 运行 39561273056](https://github.com/ekil1100/cxx/actions/runs/39561273056) 对提交 `084666f` 的 Ubuntu 24.04 / LLVM 20、macOS 14 / LLVM 20 原生构建与测试全部通过，Python 质量检查、Modules 原型和增量基线步骤也通过。这补齐了下文实现阶段记录中的 Linux 待验证项；历史记录保留当时的验证边界。此结果仅对应该提交，不包含本轮响应文件改动。
+
+### M1.1 响应文件最小切片
+
+原生依赖扫描、编译、链接和归档命令超过 16 KiB（含参数指针开销）时，使用 LLVM GNU 风格响应文件。缓存键继续使用原始参数，详细日志继续展示展开后的命令。自定义动作、测试和运行程序保留直接参数传递。临时文件通过 `mkstemp` 创建，执行结束或异常退出时删除；强制终止或主机崩溃可能留下文件。
+
+长归档命令要求归档器支持 LLVM 兼容的 `@file` 语法。Python seed 编译、Windows 支持及进程层移植不在本次切片范围内。
+
+本机 macOS arm64 / Apple Clang 21 / LLVM llvm-ar 20.1.8 执行 `CXX_BOOTSTRAP_ARCHIVER=/opt/homebrew/opt/llvm@20/bin/llvm-ar .venv/bin/python scripts/build.py --test`：46 项 C++ 测试通过；pytest 汇总为 119 passed，同时有两个 PTY 的 quit 子测试失败。失败由后台执行继承忽略 SIGQUIT 的设置引起；恢复默认信号后，两个原始 PTY 用例定向重跑为 2 passed。完整套件未再次执行。新增测试覆盖真实工具的特殊字符路径、300 KB 单参数、长归档和链接、缓存复用、响应文件清理以及自定义动作参数保持。响应文件的 Linux 原生验证待 CI。
 
 ## 当前交付
 
@@ -117,7 +129,9 @@ pytest 9.1.1 固定在 `requirements-test.txt`，仅开发验证需要安装。`
 
 可用 `task e2e -- -k noop`、`-m e2e`、`-m prototype`、`-m tooling` 筛选。暂不配置并行插件，避免共享 fixture 目录和真实编译器资源相互干扰。原有 99 个测试保留，新增 4 个入口/工具检查及 16 个库/安装回归测试，共 119 个。
 
-## 验证边界
+## M1.2 实现阶段验证边界
+
+本节保留实现时的记录；后续远端验收见本文开头。
 
 - macOS arm64 / Apple Clang 21：完整入口通过，43 项 GoogleTest C++ 单元测试与 119 项 pytest 测试（1 自举、18 集成、23 定向回归、22 M1 库、11 生成动作、17 测试/安装、16 工具、8 P02、3 P04 运行器）。
 - 实现阶段的临时 Linux 交叉链接探针使用 LLVM/LLD 20，检查 ELF SONAME、RUNPATH、私有 DT_NEEDED 边界和零动作空构建；它未运行 Linux 动态加载器。最终按需归档修复已通过本机反例，Linux 原生结果仍待 CI。

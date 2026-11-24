@@ -1136,10 +1136,10 @@ int build_targets(const Build& build, const std::vector<const Target*>& order,
                             command.install ? &protected_inputs : nullptr)) ++compiled;
         } else if (action.kind == ActionKind::archive) {
             if (file_action("archive", action.arguments, action.inputs, action.output,
-                            archiver_identity, root, verbose)) ++archived;
+                            archiver_identity, root, verbose, true, CommandFormat::llvm_response)) ++archived;
         } else if (action.kind == ActionKind::link) {
             if (file_action("link", action.arguments, action.inputs, action.output,
-                            compiler_identity, root, verbose)) ++linked;
+                            compiler_identity, root, verbose, true, CommandFormat::llvm_response)) ++linked;
         } else if (action.kind == ActionKind::test) {
             std::cerr << "[test] " << action.label << '\n';
             const auto code = run_process(action.arguments, root, verbose);
